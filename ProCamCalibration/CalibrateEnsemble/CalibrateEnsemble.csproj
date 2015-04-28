@@ -66,10 +66,8 @@
     <StartupObject>RoomAliveToolkit.MainForm</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SharpDX, Version=2.6.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\users\awilson\Kinect2\packages\SharpDX.2.6.3\Bin\DirectX11_2-net40\SharpDX.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="SharpDX">
+      <HintPath>..\..\..\..\NaturalInteraction\users\awilson\Kinect2\packages\SharpDX.2.6.3\Bin\DirectX11_2-net40\SharpDX.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.D3DCompiler, Version=2.6.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

@@ -1,0 +1,150 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Shaders\Shaders.vcxproj", "{EE25A666-F343-402A-BCE8-756877510F5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectorServer", "ProjectorServer\ProjectorServer.csproj", "{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B29916C5-A0DD-464F-8104-E6DA0FD22C0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalibrateEnsemble", "CalibrateEnsemble\CalibrateEnsemble.csproj", "{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1} = {D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}
+		{EE25A666-F343-402A-BCE8-756877510F5D} = {EE25A666-F343-402A-BCE8-756877510F5D}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinectServer", "KinectServer\KinectServer.csproj", "{706459E3-7DFE-4894-BCCF-6F82D0D14050}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA} = {B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProCamEnsembleCalibrationLib", "ProCamEnsembleCalibration\ProCamEnsembleCalibrationLib.csproj", "{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectionMappingSample", "ProjectionMappingSample\ProjectionMappingSample.csproj", "{59A35887-D3F7-4AB8-862F-98F68F9F7B51}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EE25A666-F343-402A-BCE8-756877510F5D} = {EE25A666-F343-402A-BCE8-756877510F5D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 7
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://vstfpg16:8080/tfs/pg16
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Shaders\\Shaders.vcxproj
+		SccProjectName1 = Shaders
+		SccLocalPath1 = Shaders
+		SccProjectUniqueName2 = ProjectorServer\\ProjectorServer.csproj
+		SccProjectName2 = ProjectorServer
+		SccLocalPath2 = ProjectorServer
+		SccProjectUniqueName3 = CalibrateEnsemble\\CalibrateEnsemble.csproj
+		SccProjectName3 = CalibrateEnsemble
+		SccLocalPath3 = CalibrateEnsemble
+		SccProjectUniqueName4 = KinectServer\\KinectServer.csproj
+		SccProjectName4 = KinectServer
+		SccLocalPath4 = KinectServer
+		SccProjectUniqueName5 = ProCamEnsembleCalibration\\ProCamEnsembleCalibrationLib.csproj
+		SccProjectName5 = ProCamEnsembleCalibration
+		SccLocalPath5 = ProCamEnsembleCalibration
+		SccProjectUniqueName6 = ProjectionMappingSample\\ProjectionMappingSample.csproj
+		SccProjectName6 = ProjectionMappingSample
+		SccLocalPath6 = ProjectionMappingSample
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|Win32.Build.0 = Debug|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|x64.ActiveCfg = Debug|x64
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Debug|x64.Build.0 = Debug|x64
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|Any CPU.ActiveCfg = Release|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|Win32.ActiveCfg = Release|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|Win32.Build.0 = Release|Win32
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|x64.ActiveCfg = Release|x64
+		{EE25A666-F343-402A-BCE8-756877510F5D}.Release|x64.Build.0 = Release|x64
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|x64.ActiveCfg = Debug|x64
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Debug|x64.Build.0 = Debug|x64
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|Win32.ActiveCfg = Release|Any CPU
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|x64.ActiveCfg = Release|x64
+		{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}.Release|x64.Build.0 = Release|x64
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|x64.ActiveCfg = Debug|x64
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Debug|x64.Build.0 = Debug|x64
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|Win32.ActiveCfg = Release|Any CPU
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|x64.ActiveCfg = Release|x64
+		{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}.Release|x64.Build.0 = Release|x64
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|x64.ActiveCfg = Debug|x64
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Debug|x64.Build.0 = Debug|x64
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|Any CPU.Build.0 = Release|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|Win32.ActiveCfg = Release|Any CPU
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|x64.ActiveCfg = Release|x64
+		{706459E3-7DFE-4894-BCCF-6F82D0D14050}.Release|x64.Build.0 = Release|x64
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|Win32.ActiveCfg = Release|Any CPU
+		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}.Release|x64.ActiveCfg = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|Win32.ActiveCfg = Release|Any CPU
+		{59A35887-D3F7-4AB8-862F-98F68F9F7B51}.Release|x64.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

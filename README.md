@@ -7,7 +7,7 @@ Thank you for your interest in the RoomAlive Toolkit. This document has a few th
 * Visual Studio 2013
 * Kinect for Windows v2 SDK
 
-The project has dependencies on SharpDX and Math.NET Numerics packages. These should be downloaded automatically via NuGet when RoomAlive Toolkit is built.
+The project has dependencies on SharpDX and Math.NET Numerics packages. These should be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
 
 # 1x1 Tutorial
 
@@ -76,14 +76,15 @@ In Visual Studio, check out the Settings.settings file under the Properties fold
 - FullScreenEnabled: Opens the rendered graphics window full screen on the projectors specified in calibration.xml. When false, the windows are instead opened in smaller windows with the main UI. This can be useful if you are away from your projector.
 
 # Calibrating Mutiple Cameras and/or Multiple projectors
+
 The RoomAlive Toolkit projector/camera has been designed from the ground up to handle multiple simultaneous projector and camera combinations. Immersive experiences such as those illustrated by RoomAlive are possible.
 To calibrate such a setup, keep the following in mind:
 
-- Each Kinect v2 must be hosted on a separate PC. Each PC must be running KinectServer to make its depth and color available to CalibrateEnsemble.
-- ProjectorServer.exe has similarly been designed to address the case where there are possibly multiple machines attached to multiple projectors. However, the projection mapping sample today supports only local rendering on the same adapter. If you want to address more than 3 or 4 locally attached projectors you may need a distributed rendering framework.
 - Create an .xml file from the New Dialog, selecting the right number of projectors and cameras from before hitting OK. Edit the hostNameOrAddress fields of each of the cameras and projectors.
-- The fustrums of the projectors and cameras must overlap enough so that the calibration procedure can infer the overall arrangement of all cameras and projectors. In the case where 3 projectors and 3 cameras are lined up in a row, for example, the center camera must observe some portion of the left and right projections, and some portion of the center projection must overlap with the left and right projections. We use the term ‘ensemble’ to denote the set of cameras and projectors that are calibrated together. We refer to a projector and the set of cameras that can see some part of the projector’s image as a ‘projector group’. An ensemble is thus a set of projector groups that happen to share cameras.
-- When creating a multi-camera .xml file from the user interface, the 4x4 pose matrix for the first camera in the .xml file is set to the identity. This places the first camera in the global coordinate frame and will never be changed by calibration. Then calibration will report all other poses in this global coordinate frame. If you already have a global coordinate frame you favor, set the first camera’s pose matrix to its pose in this coordinate frame. 
+- Each Kinect v2 must be hosted on a separate PC. Each PC must be running KinectServer to make its depth and color available to CalibrateEnsemble. You may use Remote Desktop to ease launching KinectServer on multiple machines, but beware that there is a known issue with the K4W SDK whereby you must tweak the RDP connection audio settings to "play on remote computer" to obtain reliable performance.
+- ProjectorServer.exe has similarly been designed to address possibly multiple machines attached to multiple projectors and calibration will support this configuration. However, the projection mapping sample today supports local rendering on the same adapter only. If you want to render to more than 3 or 4 locally attached projectors you may need a distributed rendering framework.
+- The frustums of the projectors and cameras must overlap enough so that the calibration procedure can infer the overall arrangement of all cameras and projectors. In the case where 3 projectors and 3 cameras are lined up in a row, for example, the center camera must observe some portion of the left and right projections, and some portion of the center projection must overlap with the left and right projections. We use the term ‘ensemble’ to denote the set of cameras and projectors that are calibrated together. We refer to a projector and the set of cameras that can see some part of the projector’s image as a ‘projector group’. An ensemble is thus a set of projector groups that happen to share cameras.
+- When creating a multi-camera .xml file from the user interface, the 4x4 pose matrix for the first camera in the .xml file is set to the identity. This places the first camera in the global coordinate frame and will never be changed by calibration. Then calibration will report all other poses in this global coordinate frame. If you already have a global coordinate frame you favor, set the first camera’s pose matrix to its pose in this coordinate frame before running calibration. 
 - The projection mapping sample handles multiple projector and multiple camera configurations (again, only local rendering). The sample picks up the configuration from the .xml file, supplied as a command line argument.
 
 

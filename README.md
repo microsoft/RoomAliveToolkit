@@ -7,15 +7,15 @@ Thank you for your interest in the RoomAlive Toolkit. This document has a few th
 * Visual Studio 2013
 * Kinect for Windows v2 SDK
 
-RoomAliveToolkit has dependencies on SharpDX and Math.NET Numerics packages. These should be downloaded automatically via NuGet when RoomAliveToolkit is built.
+The project has dependencies on SharpDX and Math.NET Numerics packages. These should be downloaded automatically via NuGet when RoomAlive Toolkit is built.
 
 # 1x1 Tutorial
 
-In this tutorial we outline the procedure for calibrating one projector and one camera. While one of the main features of RoomAliveToolkit is support for multiple cameras and multiple projectors, the 1x1 configuration is a good place to start and we believe it will be a popular configuration.
+In this tutorial we outline the procedure for calibrating one projector and one camera. While one of the main features of RoomAlive Toolkit is support for multiple cameras and multiple projectors, the 1x1 configuration is a good place to start and we believe it will be a popular configuration.
 
 ## Room Setup
 
-The current release of the projector camera calibration tool does not address the case where the projection surface is planar (flat). Place the projector so there are some sizable objects in the scene, such as a couch, a few boxes, whatever you have handy. Place the Kinect v2 sensor so that it views most of the projected image. Precise alignment is not critical, but both the Kinect color camera and Kinect depth camera must observe some significant portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
+The current release of the projector + camera calibration tool does not address the case where the projection surface is planar (flat). Place the projector so there are some sizable objects in the scene, such as a couch, a few boxes, whatever you have handy. Place the Kinect v2 sensor so that it views most of the projected image. Precise alignment is not critical, but both the Kinect color camera and Kinect depth camera must observe some significant portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
 
 Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, note that this should not be moved after calibration is performed. In practice it is a good idea to set it to one extreme or another, that way you will know if it has been changed.
 
@@ -27,7 +27,7 @@ Run KinectServer.exe and let it run. If you immediately receive a System.Service
 
 ## ProjectorServer
 
-Run ProjectorServer.exe and let it run. If you immediately receive a System.ServiceModel.AddressAccessDeniedException, try running KinectServer.exe as administrator (right click the KinectServer.exe icon).
+Run ProjectorServer.exe and let it run. If you immediately receive a System.ServiceModel.AddressAccessDeniedException, try running ProjectorServer.exe as administrator (right click the ProjectorServer.exe icon).
 
 ## Configure calibration.xml
 

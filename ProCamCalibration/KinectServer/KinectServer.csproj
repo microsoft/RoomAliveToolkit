@@ -68,7 +68,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files\Microsoft SDKs\Kinect\MainV2\Assemblies\Microsoft.Kinect.dll</HintPath>
     </Reference>
-    <Reference Include="SharpDX, Version=2.6.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SharpDX, Version=2.6.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\SharpDX.2.6.3\Bin\DirectX11_2-net40\SharpDX.dll</HintPath>
     </Reference>

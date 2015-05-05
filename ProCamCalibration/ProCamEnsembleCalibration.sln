@@ -28,30 +28,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectionMappingSample", "
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 7
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://vstfpg16:8080/tfs/pg16
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Shaders\\Shaders.vcxproj
-		SccProjectName1 = Shaders
-		SccLocalPath1 = Shaders
-		SccProjectUniqueName2 = ProjectorServer\\ProjectorServer.csproj
-		SccProjectName2 = ProjectorServer
-		SccLocalPath2 = ProjectorServer
-		SccProjectUniqueName3 = CalibrateEnsemble\\CalibrateEnsemble.csproj
-		SccProjectName3 = CalibrateEnsemble
-		SccLocalPath3 = CalibrateEnsemble
-		SccProjectUniqueName4 = KinectServer\\KinectServer.csproj
-		SccProjectName4 = KinectServer
-		SccLocalPath4 = KinectServer
-		SccProjectUniqueName5 = ProCamEnsembleCalibration\\ProCamEnsembleCalibrationLib.csproj
-		SccProjectName5 = ProCamEnsembleCalibration
-		SccLocalPath5 = ProCamEnsembleCalibration
-		SccProjectUniqueName6 = ProjectionMappingSample\\ProjectionMappingSample.csproj
-		SccProjectName6 = ProjectionMappingSample
-		SccLocalPath6 = ProjectionMappingSample
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms

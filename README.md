@@ -17,7 +17,7 @@ In this tutorial we outline the procedure for calibrating one projector and one 
 
 The current release of the projector + camera calibration tool does not address the case where the projection surface is planar (flat). Place the projector so there are some sizable objects in the scene, such as a couch, a few boxes, whatever you have handy. Place the Kinect v2 sensor so that it views most of the projected image. Precise alignment is not critical, but both the Kinect color camera and Kinect depth camera must observe some significant portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
 
-Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, note that this should not be moved after calibration is performed. In practice it is a good idea to set it to one extreme or another, that way you will know if it has been changed.
+Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, note that this should not be moved after calibration is performed. It is a good idea to set it to one extreme or another, that way you will know if it has been changed.
 
 Though not mandatory, it is also a good idea to remove the task bar from the projected display. To do that, right click the task bar, select Properties, and there find the option to show the taskbar on only the main display.
 
@@ -75,9 +75,13 @@ In Visual Studio, check out the Settings.settings file under the Properties fold
 - LiveDepthEnabled: The depth image used in projection mapping is updated in real time (KinectServer must be running on the host listed in calibration.xml), otherwise the static, pre-recorded depth data from the calibration procedure is used. If this option is enabled, you should be able to move objects in the scene and the projection mapping should keep up with those changes.
 - FullScreenEnabled: Opens the rendered graphics window full screen on the projectors specified in calibration.xml. When false, the windows are instead opened in smaller windows with the main UI. This can be useful if you are away from your projector.
 
+[YouTube clip of view dependent rendering of 3D object](https://www.youtube.com/watch?v=9A18AxfC2tM)
+[YouTube clip of wobble effect] (https://www.youtube.com/watch?v=VzncaJcaTF0)
+
+
 # Calibrating Mutiple Cameras and/or Multiple projectors
 
-The RoomAlive Toolkit projector/camera has been designed from the ground up to handle multiple simultaneous projector and camera combinations. Immersive experiences such as those illustrated by RoomAlive are possible.
+The RoomAlive Toolkit projector/camera calibration tool has been designed from the ground up to handle multiple simultaneous projector and camera combinations. Immersive experiences such as those illustrated by RoomAlive are possible.
 To calibrate such a setup, keep the following in mind:
 
 - Create an .xml file from the New Dialog, selecting the right number of projectors and cameras from before hitting OK. Edit the hostNameOrAddress fields of each of the cameras and projectors.
@@ -87,5 +91,9 @@ To calibrate such a setup, keep the following in mind:
 - When creating a multi-camera .xml file from the user interface, the 4x4 pose matrix for the first camera in the .xml file is set to the identity. This places the first camera in the global coordinate frame and will never be changed by calibration. Then calibration will report all other poses in this global coordinate frame. If you already have a global coordinate frame you favor, set the first camera’s pose matrix to its pose in this coordinate frame before running calibration. 
 - The projection mapping sample handles multiple projector and multiple camera configurations (again, only local rendering). The sample picks up the configuration from the .xml file, supplied as a command line argument.
 
+
+[Youtube clip of 3 camera/3 projector calibration](https://www.youtube.com/watch?v=9Ifnt3xM1J0). The resulting calibration set can be downloaded [here](http://research.microsoft.com/~awilson/RoomAliveToolkit/calibration3x3.zip). Try opening this in CalibrateEnsemble.exe.
+
+ 
 
 Good luck!

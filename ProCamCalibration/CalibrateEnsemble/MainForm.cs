@@ -137,7 +137,15 @@ namespace RoomAliveToolkit
             manipulator = new Kinect2ShaderDemo.Manipulator(videoPanel1, view, projection, viewport);
             manipulator.ViewMatrixChanged += manipulator_ViewMatrixChanged;
 
-            // TODO: address when no file is loaded (disable everything except New)
+            // disable most menu items when no file is loaded
+            saveToolStripMenuItem.Enabled = false;
+            saveAsToolStripMenuItem.Enabled = false;
+            reloadToolStripMenuItem.Enabled = false;
+            calibrateToolStripMenuItem.Enabled = false;
+            renderToolStripMenuItem.Enabled = false;
+            viewToolStripMenuItem.Enabled = false;
+            displayProjectorDisplayIndexesToolStripMenuItem.Enabled = false;
+            displayProjectorNamesToolStripMenuItem.Enabled = false;
 
             if (args.Length > 0)
             {
@@ -628,6 +636,19 @@ namespace RoomAliveToolkit
             SetViewProjectionFromCamera(ensemble.cameras[0]);
             manipulator.SetView(view);
             manipulator.projection = projection;
+
+            // we have a file loaded, so enable menu items
+            saveToolStripMenuItem.Enabled = true;
+            saveAsToolStripMenuItem.Enabled = true;
+            reloadToolStripMenuItem.Enabled = true;
+            calibrateToolStripMenuItem.Enabled = true;
+            renderToolStripMenuItem.Enabled = true;
+            viewToolStripMenuItem.Enabled = true;
+            displayProjectorDisplayIndexesToolStripMenuItem.Enabled = true;
+            displayProjectorNamesToolStripMenuItem.Enabled = true;
+
+            Text = Path.GetFileName(path) + " - CalibrateEnsemble";
+
         }
 
         List<ToolStripMenuItem> cameraMenuItems = new List<ToolStripMenuItem>();
@@ -783,13 +804,27 @@ namespace RoomAliveToolkit
         {
             if (showingDisplayIndexes)
             {
-                HideDisplayIndexes();
-                displayProjectorDisplayIndexesToolStripMenuItem.Text = "Show Projector Server Connected Displays";
+                try
+                {
+                    HideDisplayIndexes();
+                    displayProjectorDisplayIndexesToolStripMenuItem.Text = "Show Projector Server Connected Displays";
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("HideDisplayIndexes failed");
+                }
             }
             else
             {
-                ShowDisplayIndexes();
-                displayProjectorDisplayIndexesToolStripMenuItem.Text = "Hide Projector Server Connected Displays";
+                try
+                {
+                    ShowDisplayIndexes();
+                    displayProjectorDisplayIndexesToolStripMenuItem.Text = "Hide Projector Server Connected Displays";
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("ShowDisplayIndexes failed");
+                }
             }
         }
 
@@ -797,13 +832,27 @@ namespace RoomAliveToolkit
         {
             if (showingDisplayNames)
             {
-                HideDisplayNames();
-                displayProjectorNamesToolStripMenuItem.Text = "Show Projector Names";
+                try
+                {
+                    HideDisplayNames();
+                    displayProjectorNamesToolStripMenuItem.Text = "Show Projector Names";
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("HideProjectorNames failed");
+                }
             }
             else
             {
-                ShowDisplayNames();
-                displayProjectorNamesToolStripMenuItem.Text = "Hide Projector Names";
+                try
+                {
+                    ShowDisplayNames();
+                    displayProjectorNamesToolStripMenuItem.Text = "Hide Projector Names";
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("ShowProjectorNames failed");
+                }
             }
         }
 
@@ -924,7 +973,6 @@ namespace RoomAliveToolkit
         {
             foreach (var projector in ensemble.projectors)
             {
-                //projector.Client.OpenDisplay(projector.displayIndex);
                 int screenCount = projector.Client.ScreenCount();
                 for (int i = 0; i < screenCount; i++)
                 {

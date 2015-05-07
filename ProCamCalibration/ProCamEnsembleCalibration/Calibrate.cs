@@ -43,6 +43,16 @@ namespace RoomAliveToolkit
                         var uri = "net.tcp://" + hostNameOrAddress + ":9000/KinectServer2/service";
                         var address = new EndpointAddress(uri);
                         client = new KinectServer2Client(binding, address);
+                        try
+                        {
+                            client.Open();
+                        }
+                        catch (EndpointNotFoundException e)
+                        {
+                            client = null;
+                            Console.WriteLine("could not connect to Kinect server '{0}' at '{1}'", name, hostNameOrAddress);
+                            throw e;
+                        }
                     }
                     return client;
                 }
@@ -75,6 +85,16 @@ namespace RoomAliveToolkit
                         var uri = "net.tcp://" + hostNameOrAddress + ":9001/ProjectorServer/service";
                         var address = new EndpointAddress(uri);
                         client = new ProjectorServerClient(binding, address);
+                        try
+                        {
+                            client.Open();
+                        }
+                        catch (EndpointNotFoundException e)
+                        {
+                            client = null;
+                            Console.WriteLine("could not connect to projector server '{0}' at '{1}'", name, hostNameOrAddress);
+                            throw e;
+                        }
                     }
                     return client;
                 }

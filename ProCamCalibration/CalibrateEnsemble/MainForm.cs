@@ -1,16 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Windows.Forms;
-using System.Collections.Generic;
-using SharpDX;
+﻿using SharpDX;
+using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using SharpDX.Multimedia;
 using SharpDX.WIC;
-using SharpDX.D3DCompiler;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.ServiceModel;
 using System.ServiceModel.Discovery;
+using System.Windows.Forms;
 
 namespace RoomAliveToolkit
 {
@@ -671,7 +669,6 @@ namespace RoomAliveToolkit
                 menuItem.Checked = false;
             SetViewProjectionFromCamera(ensemble.cameras[0]);
             manipulator.SetView(view);
-
         }
 
         void viewMenuItem_Click(object sender, EventArgs e)
@@ -1033,16 +1030,32 @@ namespace RoomAliveToolkit
 
         void Acquire()
         {
-            ensemble.CaptureGrayCodes(directory);
-            ensemble.CaptureDepthAndColor(directory);
+            try
+            {
+                ensemble.CaptureGrayCodes(directory);
+                ensemble.CaptureDepthAndColor(directory);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Acquire failed\n" + e);
+            }
+            Console.WriteLine("Acquire complete");
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
 
         void Solve()
         {
             ensemble.DecodeGrayCodeImages(directory);
-            ensemble.CalibrateProjectorGroups(directory);
-            ensemble.OptimizePose();
+            try
+            {
+                ensemble.CalibrateProjectorGroups(directory);
+                ensemble.OptimizePose();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Solve failed\n" + e);
+            }
+            Console.WriteLine("Solve complete");
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
 
@@ -1050,42 +1063,52 @@ namespace RoomAliveToolkit
         // could be method on Projector:
         void SetViewProjectionFromProjector(ProjectorCameraEnsemble.Projector projector)
         {
-            // pick up view and projection for a given projector
-            view = new SharpDX.Matrix();
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 4; j++)
-                    view[i, j] = (float)projector.pose[i, j];
-            view.Invert();
-            view.Transpose();
+            if ((projector.pose == null) || (projector.cameraMatrix == null))
+                Console.WriteLine("Projector pose/camera matrix not set. Please perform a calibration.");
+            else
+            {
+                // pick up view and projection for a given projector
+                view = new SharpDX.Matrix();
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        view[i, j] = (float)projector.pose[i, j];
+                view.Invert();
+                view.Transpose();
 
-            var cameraMatrix = projector.cameraMatrix;
-            float fx = (float)cameraMatrix[0, 0];
-            float fy = (float)cameraMatrix[1, 1];
-            float cx = (float)cameraMatrix[0, 2];
-            float cy = (float)cameraMatrix[1, 2];
+                var cameraMatrix = projector.cameraMatrix;
+                float fx = (float)cameraMatrix[0, 0];
+                float fy = (float)cameraMatrix[1, 1];
+                float cx = (float)cameraMatrix[0, 2];
+                float cy = (float)cameraMatrix[1, 2];
 
-            float near = 0.1f;
-            float far = 100.0f;
+                float near = 0.1f;
+                float far = 100.0f;
 
-            float w = projector.width;
-            float h = projector.height;
+                float w = projector.width;
+                float h = projector.height;
 
-            projection = ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
-            projection.Transpose();
+                projection = ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+                projection.Transpose();
+            }
         }
 
         void SetViewProjectionFromCamera(ProjectorCameraEnsemble.Camera camera)
         {
-            view = new SharpDX.Matrix();
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 4; j++)
-                    view[i, j] = (float)camera.pose[i, j];
-            view.Invert();
-            view.Transpose();
+            if (camera.pose == null)
+                Console.WriteLine("Camera pose not set.");
+            else
+            {
+                view = new SharpDX.Matrix();
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        view[i, j] = (float)camera.pose[i, j];
+                view.Invert();
+                view.Transpose();
 
-            float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-            projection = PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
-            projection.Transpose();
+                float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
+                projection = PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                projection.Transpose();
+            }
         }
 
 

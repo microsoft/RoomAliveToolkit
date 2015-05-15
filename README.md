@@ -20,7 +20,7 @@ We outline the procedure for calibrating one projector and one camera. While one
 
 *Important*: The current release of the calibration tool does not address the case where the projection surface is flat (such as a bare wall). If the projection surface is flat, place some sizable objects, such as a couch, a few boxes, whatever you have handy, to create a non-flat projection surface. 
 
-Place the Kinect v2 sensor so that it views most of the projected image. Precise alignment is not critical (that's part of the point of calibration), but both the Kinect color camera and Kinect depth camera must observe some portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
+Place the Kinect v2 sensor so that it views most of the projected image, and so that projector fills much of the camera's view. Precise alignment is not critical (that's part of the point of calibration), but both the Kinect color camera and Kinect depth camera must observe a good portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
 
 Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, do not move it after calibration is performed. It is a good idea to set it to one extreme or another, so that later you will know if it has been changed.
 
@@ -38,7 +38,7 @@ Start ProjectorServer.exe and let it run. If you immediately receive a System.Se
 
 Start CalibrateEnsemble.exe. This opens a user interface that allows you to acquire calibration images, perform the actual calibration calculation and inspect the results.
 
-Create a new calibration by selecting File… New. This brings up a dialog that allows you to set the number of cameras and projectors for your setup. This defaults to 1 and 1, which is what we want for now. Hit Ok. Type a file name (say, ‘calibration.xml’). The calibration file is saved immediately. The calibration procedure will later create a number of new directories and files in whatever directory it finds calibration.xml. It therefore a good idea to put calibration.xml in a new folder somewhere.
+Create a new calibration by selecting File… New. This brings up a dialog that allows you to set the number of cameras and projectors for your setup. This defaults to 1 and 1, which is what we want for now. Hit Ok. Type a file name (say, ‘calibration.xml’). The calibration file is saved immediately. The calibration procedure will later create a number of new directories and files in whatever directory it finds calibration.xml. It is therefore a good idea to put calibration.xml in a new folder somewhere.
 
 Open calibration.xml with a text editor (Visual Studio is a good choice). Note that there are ‘cameras’ and ‘projectors’ sections that list one of each. Feel free to put in a meaningful name for either, but the default names will be fine. Also note that each lists ‘hostnameOrAddress’ as ‘localhost’. Because both KinectServer and ProjectorServer are running locally, this default value is what we want.
 

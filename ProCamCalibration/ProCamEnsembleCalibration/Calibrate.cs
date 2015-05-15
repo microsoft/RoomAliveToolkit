@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RoomAliveToolkit;
-using System.ServiceModel;
-using System.Runtime.InteropServices;
-using System.Xml;
-using System.Xml.Serialization;
 using System.IO;
-using System.Windows.Forms;
+using System.Runtime.InteropServices;
+using System.ServiceModel;
+using System.Text;
+using System.Xml.Serialization;
 
 namespace RoomAliveToolkit
 {
@@ -100,6 +95,19 @@ namespace RoomAliveToolkit
                 }
             }
             private ProjectorServerClient client;
+        }
+
+        [Serializable()]
+        public class CalibrationFailedException : System.Exception
+        {
+            public CalibrationFailedException() : base() { }
+            public CalibrationFailedException(string message) : base(message) { }
+            public CalibrationFailedException(string message, System.Exception inner) : base(message, inner) { }
+
+            // A constructor is needed for serialization when an
+            // exception propagates from a remoting server to the client. 
+            protected CalibrationFailedException(System.Runtime.Serialization.SerializationInfo info,
+                System.Runtime.Serialization.StreamingContext context) { }
         }
 
 
@@ -666,7 +674,10 @@ namespace RoomAliveToolkit
                 // RANSAC
                 double minError = Double.PositiveInfinity;
                 var random = new Random(0); // provide seed to ease debugging
-                for (int i = 0; i < 4; i++)
+
+                int numCompletedFits = 0;
+
+                for (int i = 0; (numCompletedFits < 4) && (i < 10); i++)
                 {
                     Console.WriteLine("RANSAC iteration " + i);
 
@@ -711,8 +722,7 @@ namespace RoomAliveToolkit
                             }
                             if (nTries++ > 1000)
                             {
-                                Console.WriteLine("Unable to find noncoplanar points.");
-                                return; // TODO: should return an error, throw an exception, or try to recover
+                                throw new CalibrationFailedException("Unable to find noncoplanar points.");
                                 // consider moving this check up with variance check (when calibration point sets are formed)
                             }
                         }
@@ -817,7 +827,7 @@ namespace RoomAliveToolkit
                         }
                         setIndex++;
 
-                        // require that each view has a minimum number of outliers
+                        // require that each view has a minimum number of inliers
                         enoughInliers = enoughInliers && (worldPointInlierSet.Count > 1000);
 
                         worldPointInlierSets.Add(worldPointInlierSet);
@@ -840,10 +850,11 @@ namespace RoomAliveToolkit
                             projector.cameraMatrix = cameraMatrix;
                             projector.lensDistortion = distCoeffs;
                             setIndex = 0;
+                            numCompletedFits++;
+
                             foreach (var pointSet in projector.calibrationPointSets.Values)
                             {
                                 // convert to 4x4 transform
-                                //var R = Vision.Orientation.Rodrigues(rotations[setIndex]);
                                 var R = RotationMatrixFromRotationVector(rotations[setIndex]);
                                 var t = translations[setIndex];
 
@@ -866,6 +877,9 @@ namespace RoomAliveToolkit
 
                 }
 
+                if (numCompletedFits == 0)
+                    throw new CalibrationFailedException("Unable to successfully calibrate projector: " + projector.name);
+ 
                 Console.WriteLine("final calibration:");
                 Console.Write("camera matrix = \n" + projector.cameraMatrix);
                 Console.Write("distortion = \n" + projector.lensDistortion);
@@ -1410,6 +1424,9 @@ namespace RoomAliveToolkit
 
         public void SaveToOBJ(string directory)
         {
+            // force decimal point so standard programs like MeshLab can read this
+            System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator = ".";
+
             var objDirectory = directory + "//obj";
 
             if (!Directory.Exists(objDirectory))
@@ -1613,6 +1630,9 @@ namespace RoomAliveToolkit
 
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
+            // force decimal point so standard programs like MeshLab can read this
+            System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator = ".";
+
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename, false, Encoding.ASCII))
             {
                 // Write Header

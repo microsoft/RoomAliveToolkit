@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using Microsoft.Kinect;
 using RoomAliveToolkit;
+using System.Runtime.Serialization;
 
 namespace Kinect2
 {
+
+    [DataContract]
     public class Kinect2Calibration
     {
         public const int depthImageWidth = 512;
@@ -12,10 +15,15 @@ namespace Kinect2
         public const int colorImageWidth = 1920;
         public const int colorImageHeight = 1080;
 
+        [DataMember]
         public Matrix colorCameraMatrix = new RoomAliveToolkit.Matrix(3, 3);
+        [DataMember]
         public Matrix colorLensDistortion = new RoomAliveToolkit.Matrix(2, 1);
+        [DataMember]
         public Matrix depthCameraMatrix = new RoomAliveToolkit.Matrix(3, 3);
+        [DataMember]
         public Matrix depthLensDistortion = new RoomAliveToolkit.Matrix(2, 1);
+        [DataMember]
         public Matrix depthToColorTransform = new RoomAliveToolkit.Matrix(4, 4);
 
         public void RecoverCalibrationFromSensor(KinectSensor kinectSensor)

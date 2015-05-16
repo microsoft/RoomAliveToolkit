@@ -4,28 +4,38 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.Text;
-using System.Xml.Serialization;
+using System.Xml;
+using System.Runtime.Serialization;
 
 namespace RoomAliveToolkit
 {
+    [DataContract]
     public class ProjectorCameraEnsemble
     {
+        [DataMember]
         public string name;
+        [DataMember]
         public List<Camera> cameras;
+        [DataMember]
         public List<Projector> projectors;
 
+        [DataContract]
         public class Camera
         {
+            [DataMember]
             public string name;
+            [DataMember]
             public string hostNameOrAddress;
+            [DataMember]
             public Matrix pose;
+            [DataMember]
             public Kinect2.Kinect2Calibration calibration;
 
-            [XmlIgnore]
+            //[XmlIgnore]
             public List<Matrix> colorImagePoints;
-            [XmlIgnore]
+            //[XmlIgnore]
             public List<Matrix> depthCameraPoints;
-            [XmlIgnore]
+            //[XmlIgnore]
             public KinectServer2Client Client
             {
                 get
@@ -55,20 +65,28 @@ namespace RoomAliveToolkit
             private KinectServer2Client client;
         }
 
+        [DataContract]
         public class Projector
         {
+            [DataMember]
             public string name;
+            [DataMember]
             public string hostNameOrAddress;
+            [DataMember]
             public int displayIndex;
+            [DataMember]
             public int width, height;
+            [DataMember]
             public Matrix cameraMatrix;
+            [DataMember]
             public Matrix lensDistortion;
+            [DataMember]
             public Matrix pose;
 
-            [XmlIgnore]
+            //[XmlIgnore]
             public Dictionary<Camera, CalibrationPointSet> calibrationPointSets;
 
-            [XmlIgnore]
+            //[XmlIgnore]
             public ProjectorServerClient Client
             {
                 get
@@ -148,19 +166,19 @@ namespace RoomAliveToolkit
 
         public static ProjectorCameraEnsemble FromFile(string filename)
         {
-            var serializer = new XmlSerializer(typeof(ProjectorCameraEnsemble));
+            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble));
             var fileStream = new FileStream(filename, FileMode.Open);
-            var room = (ProjectorCameraEnsemble)serializer.Deserialize(fileStream);
+            var room = (ProjectorCameraEnsemble)serializer.ReadObject(fileStream);
             fileStream.Close();
             return room;
         }
 
         public void Save(string filename)
         {
-            var serializer = new XmlSerializer(typeof(ProjectorCameraEnsemble));
-            var writer = new StreamWriter(filename);
-            serializer.Serialize(writer, this);
-            writer.Close();
+            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble));
+            var settings = new XmlWriterSettings { Indent = true };
+            using (var writer = XmlWriter.Create(filename, settings))
+                serializer.WriteObject(writer, this);
         }
 
 
@@ -426,7 +444,7 @@ namespace RoomAliveToolkit
 
         }
 
-        [XmlIgnore]
+        //[XmlIgnore]
         public SharpDX.WIC.ImagingFactory2 imagingFactory = new SharpDX.WIC.ImagingFactory2();
         System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
 

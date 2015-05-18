@@ -179,11 +179,6 @@ namespace RoomAliveToolkit
 
 
 
-        public const int depthImageWidth = 512;
-        public const int depthImageHeight = 424;
-        public const int colorImageWidth = 1920;
-        public const int colorImageHeight = 1080;
-
         class CameraDeviceResource : IDisposable
         {
             // encapsulates d3d resources for a camera
@@ -196,8 +191,8 @@ namespace RoomAliveToolkit
                 // Kinect depth image
                 var depthImageTextureDesc = new Texture2DDescription()
                 {
-                    Width = 512,
-                    Height = 424,
+                    Width = Kinect2Calibration.depthImageWidth,
+                    Height = Kinect2Calibration.depthImageHeight,
                     MipLevels = 1,
                     ArraySize = 1,
                     Format = SharpDX.DXGI.Format.R16_UInt,
@@ -212,8 +207,8 @@ namespace RoomAliveToolkit
                 // Kinect color image
                 var colorImageStagingTextureDesc = new Texture2DDescription()
                 {
-                    Width = 1920,
-                    Height = 1080,
+                    Width = Kinect2Calibration.colorImageWidth,
+                    Height = Kinect2Calibration.colorImageHeight,
                     MipLevels = 1,
                     ArraySize = 1,
                     Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
@@ -226,8 +221,8 @@ namespace RoomAliveToolkit
 
                 var colorImageTextureDesc = new Texture2DDescription()
                 {
-                    Width = 1920,
-                    Height = 1080,
+                    Width = Kinect2Calibration.colorImageWidth,
+                    Height = Kinect2Calibration.colorImageHeight,
                     MipLevels = 0,
                     ArraySize = 1,
                     Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
@@ -242,7 +237,7 @@ namespace RoomAliveToolkit
 
 
                 var table = camera.calibration.ComputeDepthFrameToCameraSpaceTable();
-                int numVertices = 6 * (depthImageWidth - 1) * (depthImageHeight - 1);
+                int numVertices = 6 * (Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1);
                 var vertices = new VertexPosition[numVertices];
 
                 Int3[] quadOffsets = new Int3[]
@@ -256,14 +251,14 @@ namespace RoomAliveToolkit
                 };
 
                 int vertexIndex = 0;
-                for (int y = 0; y < depthImageHeight - 1; y++)
-                    for (int x = 0; x < depthImageWidth - 1; x++)
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight - 1; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth - 1; x++)
                         for (int i = 0; i < 6; i++)
                         {
                             int vertexX = x + quadOffsets[i].X;
                             int vertexY = y + quadOffsets[i].Y;
 
-                            var point = table[depthImageWidth * vertexY + vertexX];
+                            var point = table[Kinect2Calibration.depthImageWidth * vertexY + vertexX];
 
                             var vertex = new VertexPosition();
                             vertex.position = new SharpDX.Vector4(point.X, point.Y, vertexX, vertexY);
@@ -290,10 +285,10 @@ namespace RoomAliveToolkit
 
                 if (File.Exists(directory + "/camera" + camera.name + "/projectorLabels.tiff")) // FIX: this assumes that mean.tiff is exists (very likely)
                 {
-                    var colorImage = new RoomAliveToolkit.ARGBImage(colorImageWidth, colorImageHeight);
+                    var colorImage = new RoomAliveToolkit.ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
                     ProjectorCameraEnsemble.LoadFromTiff(imagingFactory, colorImage, directory + "/camera" + camera.name + "/projectorLabels.tiff");
 
-                    var depthImage = new RoomAliveToolkit.ShortImage(depthImageWidth, depthImageHeight);
+                    var depthImage = new RoomAliveToolkit.ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                     ProjectorCameraEnsemble.LoadFromTiff(imagingFactory, depthImage, directory + "/camera" + camera.name + "/mean.tiff");
 
                     lock (renderLock) // necessary?
@@ -344,7 +339,7 @@ namespace RoomAliveToolkit
                 DataStream dataStream;
                 deviceContext.MapSubresource(depthImageTexture, 0,
                    MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-                dataStream.WriteRange(depthImage, depthImageWidth * depthImageHeight * 2);
+                dataStream.WriteRange(depthImage, Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2);
                 deviceContext.UnmapSubresource(depthImageTexture, 0);
             }
 
@@ -353,7 +348,7 @@ namespace RoomAliveToolkit
                 DataStream dataStream;
                 deviceContext.MapSubresource(depthImageTexture, 0,
                    MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-                dataStream.WriteRange<byte>(depthImage, 0, depthImageWidth * depthImageHeight * 2);
+                dataStream.WriteRange<byte>(depthImage, 0, Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2);
                 deviceContext.UnmapSubresource(depthImageTexture, 0);
             }
 
@@ -362,15 +357,15 @@ namespace RoomAliveToolkit
                 DataStream dataStream;
                 deviceContext.MapSubresource(colorImageStagingTexture, 0,
                     MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-                dataStream.WriteRange(colorImage, colorImageWidth * colorImageHeight * 4);
+                dataStream.WriteRange(colorImage, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                 deviceContext.UnmapSubresource(colorImageStagingTexture, 0);
 
                 var resourceRegion = new ResourceRegion()
                 {
                     Left = 0,
                     Top = 0,
-                    Right = colorImageWidth,
-                    Bottom = colorImageHeight,
+                    Right = Kinect2Calibration.colorImageWidth,
+                    Bottom = Kinect2Calibration.colorImageHeight,
                     Front = 0,
                     Back = 1,
                 };
@@ -383,15 +378,15 @@ namespace RoomAliveToolkit
                 DataStream dataStream;
                 deviceContext.MapSubresource(colorImageStagingTexture, 0,
                     MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-                dataStream.WriteRange<byte>(colorImage, 0, colorImageWidth * colorImageHeight * 4);
+                dataStream.WriteRange<byte>(colorImage, 0, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                 deviceContext.UnmapSubresource(colorImageStagingTexture, 0);
 
                 var resourceRegion = new ResourceRegion()
                 {
                     Left = 0,
                     Top = 0,
-                    Right = colorImageWidth,
-                    Bottom = colorImageHeight,
+                    Right = Kinect2Calibration.colorImageWidth,
+                    Bottom = Kinect2Calibration.colorImageHeight,
                     Front = 0,
                     Back = 1,
                 };
@@ -404,7 +399,7 @@ namespace RoomAliveToolkit
                 deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
                 deviceContext.VertexShader.SetShaderResource(0, depthImageTextureRV);
                 deviceContext.PixelShader.SetShaderResource(0, colorImageTextureRV);
-                deviceContext.Draw((depthImageWidth - 1) * (depthImageHeight - 1) * 6, 0);
+                deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
             }
 
             bool live = false;
@@ -424,8 +419,8 @@ namespace RoomAliveToolkit
             Object renderLock;
 
             //byte[] colorData = new byte[4 * Kinect2.Kinect2Calibration.colorImageWidth * Kinect2.Kinect2Calibration.colorImageHeight];
-            byte[] nextColorData = new byte[4 * Kinect2.Kinect2Calibration.colorImageWidth * Kinect2.Kinect2Calibration.colorImageHeight];
-            SharpDX.WIC.ImagingFactory2 imagingFactory = new SharpDX.WIC.ImagingFactory2();
+            byte[] nextColorData = new byte[4 * RoomAliveToolkit.Kinect2Calibration.colorImageWidth * RoomAliveToolkit.Kinect2Calibration.colorImageHeight];
+            SharpDX.WIC.ImagingFactory imagingFactory = new SharpDX.WIC.ImagingFactory();
             void ColorCameraLoop()
             {
                 while (live)
@@ -442,7 +437,7 @@ namespace RoomAliveToolkit
                     // convert to 32 bpp
                     var formatConverter = new FormatConverter(imagingFactory);
                     formatConverter.Initialize(bitmapFrameDecode, SharpDX.WIC.PixelFormat.Format32bppBGR);
-                    formatConverter.CopyPixels(nextColorData, 1920 * 4); // TODO: consider copying directly to texture native memory
+                    formatConverter.CopyPixels(nextColorData, Kinect2Calibration.colorImageWidth * 4); // TODO: consider copying directly to texture native memory
                     //lock (colorData)
                     //    Swap<byte[]>(ref colorData, ref nextColorData);
                     lock (renderLock) // necessary?
@@ -505,7 +500,7 @@ namespace RoomAliveToolkit
             public fixed float projection[16];
         };
 
-        public unsafe void SetConstants(DeviceContext deviceContext, Kinect2.Kinect2Calibration kinect2Calibration, SharpDX.Matrix projection)
+        public unsafe void SetConstants(DeviceContext deviceContext, RoomAliveToolkit.Kinect2Calibration kinect2Calibration, SharpDX.Matrix projection)
         {
             // hlsl matrices are default column order
             var constants = new ConstantBuffer();
@@ -906,7 +901,7 @@ namespace RoomAliveToolkit
 
                     // TODO: in the case of perspective projection, change projection to follow change in aspect
                     float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-                    projection = PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                    projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
                     projection.Transpose();
                 }
         }
@@ -1016,6 +1011,9 @@ namespace RoomAliveToolkit
             {
                 try
                 {
+
+                    //ensemble = new ProjectorCameraEnsemble();
+
                     ensemble = ProjectorCameraEnsemble.FromFile(path);
                     Console.WriteLine("Loaded " + path);
                 }
@@ -1087,7 +1085,7 @@ namespace RoomAliveToolkit
                 float w = projector.width;
                 float h = projector.height;
 
-                projection = ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+                projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
                 projection.Transpose();
             }
         }
@@ -1106,61 +1104,9 @@ namespace RoomAliveToolkit
                 view.Transpose();
 
                 float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-                projection = PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
                 projection.Transpose();
             }
-        }
-
-
-        public static SharpDX.Matrix ProjectionMatrixFromCameraMatrix(float fx, float fy, float cx, float cy, float w, float h, float near, float far)
-        {
-            // fx, fy, cx, cy are in pixels
-            // input coordinate sysem is x left, y up, z foward (right handed)
-            // project to view volume where x, y in [-1, 1], z in [0, 1], x right, y up, z forward
-            // pre-multiply matrix
-
-            // -(2 * fx / w),           0,   -(2 * cx / w - 1),                           0,
-            //             0,  2 * fy / h,      2 * cy / h - 1,                           0,
-            //             0,           0,  far / (far - near),  -near * far / (far - near),
-            //             0,           0,                   1,                           0
-
-            return new SharpDX.Matrix(
-                -(2 * fx / w), 0, -(2 * cx / w - 1), 0,
-                0, 2 * fy / h, 2 * cy / h - 1, 0,
-                0, 0, far / (far - near), -near * far / (far - near),
-                0, 0, 1, 0
-                );
-        }
-
-        public static SharpDX.Matrix PerspectiveFov(float fieldOfViewY, float aspectRatio, float near, float far)
-        {
-            // right handed, pre multiply, x left, y up, z forward
-
-            float h = 1f / (float)Math.Tan(fieldOfViewY / 2f);
-            float w = h / aspectRatio;
-
-            return new SharpDX.Matrix(
-                -w, 0, 0, 0,
-                0, h, 0, 0,
-                0, 0, far / (far - near), -near * far / (far - near),
-                0, 0, 1, 0
-                );
-        }
-
-        public static SharpDX.Matrix LookAt(Vector3 cameraPosition, Vector3 cameraTarget, Vector3 cameraUpVector)
-        {
-            // right handed, pre multiply, x left, y up, z forward
-
-            var zaxis = Vector3.Normalize(cameraTarget - cameraPosition);
-            var xaxis = Vector3.Normalize(Vector3.Cross(cameraUpVector, zaxis));
-            var yaxis = Vector3.Cross(zaxis, xaxis);
-
-            return new SharpDX.Matrix(
-                xaxis.X, xaxis.Y, xaxis.Z, -Vector3.Dot(xaxis, cameraPosition),
-                yaxis.X, yaxis.Y, yaxis.Z, -Vector3.Dot(yaxis, cameraPosition),
-                zaxis.X, zaxis.Y, zaxis.Z, -Vector3.Dot(zaxis, cameraPosition),
-                0, 0, 0, 1
-            );
         }
 
     }

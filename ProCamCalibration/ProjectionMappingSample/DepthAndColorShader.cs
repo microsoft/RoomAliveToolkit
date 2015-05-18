@@ -11,11 +11,6 @@ namespace RoomAliveToolkit
 {
     public class DepthAndColorShader
     {
-        public const int depthImageWidth = 512;
-        public const int depthImageHeight = 424;
-        public const int colorImageWidth = 1920;
-        public const int colorImageHeight = 1080;
-
         public DepthAndColorShader(Device device)
         {
             shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/DepthAndColorFloatVS.cso"));
@@ -75,8 +70,8 @@ namespace RoomAliveToolkit
             // filtered depth image
             var filteredDepthImageTextureDesc = new Texture2DDescription()
             {
-                Width = depthImageWidth * 3,
-                Height = depthImageHeight * 3,
+                Width = Kinect2Calibration.depthImageWidth * 3,
+                Height = Kinect2Calibration.depthImageHeight * 3,
                 MipLevels = 1,
                 ArraySize = 1,
                 Format = SharpDX.DXGI.Format.R32G32_Float,
@@ -139,7 +134,7 @@ namespace RoomAliveToolkit
             };
             constantBuffer = new SharpDX.Direct3D11.Buffer(device, constantBufferDesc);
 
-            bilateralFilter = new BilateralFilter(device, depthImageWidth, depthImageHeight);
+            bilateralFilter = new BilateralFilter(device, Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
 
             vertexInputLayout = new InputLayout(device, shaderByteCode.Data, new[]
             {
@@ -148,13 +143,13 @@ namespace RoomAliveToolkit
 
         }
 
-        public static SharpDX.Direct3D11.Buffer CreateVertexBuffer(Device device, Kinect2.Kinect2Calibration kinect2Calibration)
+        public static SharpDX.Direct3D11.Buffer CreateVertexBuffer(Device device, RoomAliveToolkit.Kinect2Calibration kinect2Calibration)
         {
             // generate depthFrameToCameraSpace table
-            var depthFrameToCameraSpaceTable = kinect2Calibration.ComputeDepthFrameToCameraSpaceTable(depthImageWidth, depthImageHeight);
+            var depthFrameToCameraSpaceTable = kinect2Calibration.ComputeDepthFrameToCameraSpaceTable(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
 
 
-            int numVertices = 6 * (depthImageWidth - 1) * (depthImageHeight - 1);
+            int numVertices = 6 * (Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1);
             var vertices = new VertexPosition[numVertices];
 
             Int3[] quadOffsets = new Int3[]
@@ -168,14 +163,14 @@ namespace RoomAliveToolkit
             };
 
             int vertexIndex = 0;
-            for (int y = 0; y < depthImageHeight - 1; y++)
-                for (int x = 0; x < depthImageWidth - 1; x++)
+            for (int y = 0; y < Kinect2Calibration.depthImageHeight - 1; y++)
+                for (int x = 0; x < Kinect2Calibration.depthImageWidth - 1; x++)
                     for (int i = 0; i < 6; i++)
                     {
                         int vertexX = x + quadOffsets[i].X;
                         int vertexY = y + quadOffsets[i].Y;
 
-                        var point = depthFrameToCameraSpaceTable[depthImageWidth * vertexY + vertexX];
+                        var point = depthFrameToCameraSpaceTable[Kinect2Calibration.depthImageWidth * vertexY + vertexX];
 
                         var vertex = new VertexPosition();
                         vertex.position = new SharpDX.Vector4(point.X, point.Y, vertexX, vertexY);
@@ -234,7 +229,7 @@ namespace RoomAliveToolkit
         };
 
 
-        public unsafe void SetConstants(DeviceContext deviceContext, Kinect2.Kinect2Calibration kinect2Calibration, SharpDX.Matrix projection)
+        public unsafe void SetConstants(DeviceContext deviceContext, RoomAliveToolkit.Kinect2Calibration kinect2Calibration, SharpDX.Matrix projection)
         {
             // hlsl matrices are default column order
             var constants = new ConstantBuffer();
@@ -286,7 +281,7 @@ namespace RoomAliveToolkit
             deviceContext.PixelShader.SetSampler(0, colorSamplerState);
             deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
             deviceContext.OutputMerger.DepthStencilState = depthStencilState;
-            deviceContext.Draw((depthImageWidth - 1) * (depthImageHeight - 1) * 6, 0);
+            deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
         }
 
         VertexShader depthAndColorVS;

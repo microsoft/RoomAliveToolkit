@@ -29,13 +29,10 @@ namespace RoomAliveToolkit
             [DataMember]
             public Matrix pose;
             [DataMember]
-            public Kinect2.Kinect2Calibration calibration;
+            public RoomAliveToolkit.Kinect2Calibration calibration;
 
-            //[XmlIgnore]
             public List<Matrix> colorImagePoints;
-            //[XmlIgnore]
             public List<Matrix> depthCameraPoints;
-            //[XmlIgnore]
             public KinectServer2Client Client
             {
                 get
@@ -83,10 +80,8 @@ namespace RoomAliveToolkit
             [DataMember]
             public Matrix pose;
 
-            //[XmlIgnore]
             public Dictionary<Camera, CalibrationPointSet> calibrationPointSets;
 
-            //[XmlIgnore]
             public ProjectorServerClient Client
             {
                 get
@@ -128,7 +123,6 @@ namespace RoomAliveToolkit
                 System.Runtime.Serialization.StreamingContext context) { }
         }
 
-
         public class CalibrationPointSet
         {
             public List<Matrix> worldPoints = new List<Matrix>();
@@ -137,8 +131,6 @@ namespace RoomAliveToolkit
             public List<System.Drawing.PointF> imagePointInliers = new List<System.Drawing.PointF>();
             public Matrix pose;
         }
-
-        public ProjectorCameraEnsemble() { }
 
         public ProjectorCameraEnsemble(int numProjectors, int numCameras)
         {
@@ -162,31 +154,42 @@ namespace RoomAliveToolkit
                     camera.pose = RoomAliveToolkit.Matrix.Identity(4, 4);
             }
             name = "Untitled";
+
+            imagingFactory = new SharpDX.WIC.ImagingFactory();
+            stopWatch = new System.Diagnostics.Stopwatch();
         }
 
         public static ProjectorCameraEnsemble FromFile(string filename)
         {
-            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble));
+            var knownTypeList = new List<Type>();
+            knownTypeList.Add(typeof(Kinect2Calibration));
+            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble), knownTypeList);
             var fileStream = new FileStream(filename, FileMode.Open);
             var room = (ProjectorCameraEnsemble)serializer.ReadObject(fileStream);
             fileStream.Close();
             return room;
         }
 
+        public SharpDX.WIC.ImagingFactory imagingFactory;
+        System.Diagnostics.Stopwatch stopWatch;
+
+        // DataContractSerializer does not call a constructor or field initializers on deserialization.
+        [OnDeserialized]
+        void OnDeserialized(StreamingContext c)
+        {
+            imagingFactory = new SharpDX.WIC.ImagingFactory();
+            stopWatch = new System.Diagnostics.Stopwatch();
+        }
+
         public void Save(string filename)
         {
-            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble));
+            var knownTypeList = new List<Type>();
+            knownTypeList.Add(typeof(Kinect2Calibration));
+            var serializer = new DataContractSerializer(typeof(ProjectorCameraEnsemble), knownTypeList);
             var settings = new XmlWriterSettings { Indent = true };
             using (var writer = XmlWriter.Create(filename, settings))
                 serializer.WriteObject(writer, this);
         }
-
-
-        // maybe better somewhere else:
-        const int depthWidth = 512;
-        const int depthHeight = 424;
-        const int colorWidth = 1920;
-        const int colorHeight = 1080;
 
         public void CaptureGrayCodes(string directory)
         {
@@ -202,7 +205,7 @@ namespace RoomAliveToolkit
             //   get calibration 
             //   save depth map to file
 
-            var grayImage = new ByteImage(colorWidth, colorHeight);
+            var grayImage = new ByteImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
 
             // pick up projector image dimensions form server and save them in configuration
             // put up projector's name on each
@@ -227,8 +230,8 @@ namespace RoomAliveToolkit
                 //var jpegBytes = camera.client.LatestJPEGImage();
                 //File.WriteAllBytes(cameraDirectory + "/projectorLabels.jpg", jpegBytes);
                 var colorBytes = camera.Client.LatestRGBImage();
-                var image = new ARGBImage(colorWidth, colorHeight);
-                Marshal.Copy(colorBytes, 0, image.DataIntPtr, colorWidth * colorHeight * 4);
+                var image = new ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                Marshal.Copy(colorBytes, 0, image.DataIntPtr, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                 SaveToTiff(imagingFactory, image, cameraDirectory + "/projectorLabels.tiff");
                 image.Dispose();
             }
@@ -288,9 +291,9 @@ namespace RoomAliveToolkit
                         var colorImageBytes = camera.Client.LatestYUVImage();
 
                         // convert YUY2 to grayscale
-                        for (int y = 0; y < colorHeight; y++)
-                            for (int x = 0; x < colorWidth; x++)
-                                grayImage[x, y] = colorImageBytes[2 * (colorWidth * y + x)];
+                        for (int y = 0; y < Kinect2Calibration.colorImageHeight; y++)
+                            for (int x = 0; x < Kinect2Calibration.colorImageWidth; x++)
+                                grayImage[x, y] = colorImageBytes[2 * (Kinect2Calibration.colorImageWidth * y + x)];
 
                         // save to file
                         SaveToTiff(imagingFactory, grayImage, cameraDirectory + "/grayCode" + i + ".tiff");
@@ -320,20 +323,20 @@ namespace RoomAliveToolkit
                     Directory.CreateDirectory(cameraDirectory);
 
                 // compute mean and variance of depth image
-                var sum = new FloatImage(depthWidth, depthHeight);
+                var sum = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 sum.Zero();
-                var sumSquared = new FloatImage(depthWidth, depthHeight);
+                var sumSquared = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 sumSquared.Zero();
-                var count = new ShortImage(depthWidth, depthHeight);
+                var count = new ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 count.Zero();
-                var depth = new ShortImage(depthWidth, depthHeight);
+                var depth = new ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 for (int i = 0; i < 100; i++)
                 {
                     var depthBytes = camera.Client.LatestDepthImage();
-                    Marshal.Copy(depthBytes, 0, depth.DataIntPtr, depthWidth * depthHeight * 2);
+                    Marshal.Copy(depthBytes, 0, depth.DataIntPtr, Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2);
                     Console.WriteLine("acquired depth image " + i);
-                    for (int y = 0; y < depthHeight; y++)
-                        for (int x = 0; x < depthWidth; x++)
+                    for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                        for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                             if (depth[x, y] != 0)
                             {
                                 ushort d = depth[x, y];
@@ -343,13 +346,13 @@ namespace RoomAliveToolkit
                             }
                 }
 
-                var meanImage = new FloatImage(depthWidth, depthHeight);
+                var meanImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 meanImage.Zero(); // not all pixels will be assigned
-                var varianceImage = new FloatImage(depthWidth, depthHeight);
+                var varianceImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                 varianceImage.Zero(); // not all pixels will be assigned
 
-                for (int y = 0; y < depthHeight; y++)
-                    for (int x = 0; x < depthWidth; x++)
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         if (count[x, y] > 50)
                         {
@@ -365,20 +368,20 @@ namespace RoomAliveToolkit
                 varianceImage.SaveToFile(cameraDirectory + "/variance.bin");
 
                 // create a short version that we can write, used only for debugging
-                var meanDepthShortImage = new ShortImage(depthWidth, depthHeight);
-                for (int y = 0; y < depthHeight; y++)
-                    for (int x = 0; x < depthWidth; x++)
+                var meanDepthShortImage = new ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                         meanDepthShortImage[x, y] = (ushort)meanImage[x, y];
                 SaveToTiff(imagingFactory, meanDepthShortImage, cameraDirectory + "/mean.tiff");
 
                 // convert to world coordinates and save to ply file
                 camera.calibration = camera.Client.GetCalibration();
                 var depthFrameToCameraSpaceTable = camera.calibration.ComputeDepthFrameToCameraSpaceTable();
-                var world = new Float3Image(depthWidth, depthHeight); // TODO: move out/reuse
-                for (int y = 0; y < depthHeight; y++)
-                    for (int x = 0; x < depthWidth; x++)
+                var world = new Float3Image(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight); // TODO: move out/reuse
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
-                        var pointF = depthFrameToCameraSpaceTable[y * depthWidth + x];
+                        var pointF = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
                         Float3 worldPoint;
                         worldPoint.x = pointF.X * meanImage[x, y];
                         worldPoint.y = pointF.Y * meanImage[x, y];
@@ -413,8 +416,8 @@ namespace RoomAliveToolkit
                 var jpegBytes = camera.Client.LatestJPEGImage();
                 File.WriteAllBytes(cameraDirectory + "/color.jpg", jpegBytes);
                 var colorBytes = camera.Client.LatestRGBImage();
-                var image = new ARGBImage(colorWidth, colorHeight);
-                Marshal.Copy(colorBytes, 0, image.DataIntPtr, colorWidth * colorHeight * 4);
+                var image = new ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                Marshal.Copy(colorBytes, 0, image.DataIntPtr, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                 SaveToTiff(imagingFactory, image, cameraDirectory + "/color.tiff");
                 image.Dispose();
 
@@ -429,8 +432,8 @@ namespace RoomAliveToolkit
                 var jpegBytes = camera.Client.LatestJPEGImage();
                 File.WriteAllBytes(cameraDirectory + "/colorDark.jpg", jpegBytes);
                 var colorBytes = camera.Client.LatestRGBImage();
-                var image = new ARGBImage(colorWidth, colorHeight);
-                Marshal.Copy(colorBytes, 0, image.DataIntPtr, colorWidth * colorHeight * 4);
+                var image = new ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                Marshal.Copy(colorBytes, 0, image.DataIntPtr, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                 SaveToTiff(imagingFactory, image, cameraDirectory + "/colorDark.tiff");
                 image.Dispose();
 
@@ -444,9 +447,6 @@ namespace RoomAliveToolkit
 
         }
 
-        //[XmlIgnore]
-        public SharpDX.WIC.ImagingFactory2 imagingFactory = new SharpDX.WIC.ImagingFactory2();
-        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
 
         public void DecodeGrayCodeImages(string directory)
         {
@@ -464,7 +464,7 @@ namespace RoomAliveToolkit
                 int nCapturedImages = 2 * (grayCode.numXBits + grayCode.numYBits); // varies by projector
                 var capturedImages = new ByteImage[nCapturedImages];
                 for (int i = 0; i < nCapturedImages; i++) // varies by projector
-                    capturedImages[i] = new ByteImage(colorWidth, colorHeight);
+                    capturedImages[i] = new ByteImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
 
 
                 foreach (var camera in cameras)
@@ -477,9 +477,9 @@ namespace RoomAliveToolkit
                     for (int i = 0; i < nCapturedImages; i++)
                         LoadFromTiff(imagingFactory, capturedImages[i], cameraDirectory + "/grayCode" + i + ".tiff");
 
-                    var decodedColumns = new ShortImage(colorWidth, colorHeight);
-                    var decodedRows = new ShortImage(colorWidth, colorHeight);
-                    var mask = new ByteImage(colorWidth, colorHeight);
+                    var decodedColumns = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                    var decodedRows = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                    var mask = new ByteImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
 
                     // TODO: there are a couple of interesting thresholds in Decode; they should be surfaced here
                     grayCode.Decode(capturedImages, decodedColumns, decodedRows, mask);
@@ -491,11 +491,11 @@ namespace RoomAliveToolkit
                     SaveToTiff(imagingFactory, mask, cameraDirectory + "/mask.tiff");
 
 
-                    var decodedColumnsMasked = new ShortImage(colorWidth, colorHeight);
-                    var decodedRowsMasked = new ShortImage(colorWidth, colorHeight);
+                    var decodedColumnsMasked = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                    var decodedRowsMasked = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
 
-                    for (int y = 0; y < colorHeight; y++)
-                        for (int x = 0; x < colorWidth; x++)
+                    for (int y = 0; y < Kinect2Calibration.colorImageHeight; y++)
+                        for (int x = 0; x < Kinect2Calibration.colorImageWidth; x++)
                         {
                             if (mask[x, y] > 0)
                             {
@@ -519,9 +519,9 @@ namespace RoomAliveToolkit
         public void CalibrateProjectorGroups(string directory)
         {
             // for all cameras, take depth image points to color image points
-            var depthImage = new FloatImage(depthWidth, depthHeight);
-            var varianceImage = new FloatImage(depthWidth, depthHeight);
-            var validMask = new ByteImage(depthWidth, depthHeight);
+            var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
+            var varianceImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
+            var validMask = new ByteImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
 
             foreach (var camera in cameras)
             {
@@ -544,8 +544,8 @@ namespace RoomAliveToolkit
 
                 // for each valid point in depth image
                 int numRejected = 0;
-                for (int y = 0; y < depthHeight; y += 1)
-                    for (int x = 0; x < depthWidth; x += 1)
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y += 1)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x += 1)
                     {
                         float depth = depthImage[x, y] / 1000f; // m
                         float variance = varianceImage[x, y];
@@ -560,7 +560,7 @@ namespace RoomAliveToolkit
                         validMask[x, y] = (byte)255;
 
                         // convert to depth camera space
-                        var point = depthFrameToCameraSpaceTable[y * depthWidth + x];
+                        var point = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
                         depthCamera4[0] = point.X * depth;
                         depthCamera4[1] = point.Y * depth;
                         depthCamera4[2] = depth;
@@ -574,7 +574,7 @@ namespace RoomAliveToolkit
                         double colorU, colorV;
                         CameraMath.Project(calibration.colorCameraMatrix, calibration.colorLensDistortion, colorCamera[0], colorCamera[1], colorCamera[2], out colorU, out colorV);
 
-                        if ((colorU >= 0) && (colorU < (colorWidth - 1)) && (colorV >= 0) && (colorV < (colorHeight - 1))) // BEWARE: later do we round or truncate??
+                        if ((colorU >= 0) && (colorU < (Kinect2Calibration.colorImageWidth - 1)) && (colorV >= 0) && (colorV < (Kinect2Calibration.colorImageHeight - 1))) // BEWARE: later do we round or truncate??
                         {
                             var colorImagePoint = new Matrix(2, 1);
                             colorImagePoint[0] = colorU;
@@ -595,7 +595,7 @@ namespace RoomAliveToolkit
                     }
                 SaveToTiff(imagingFactory, validMask, cameraDirectory + "/validMask.tiff");
 
-                Console.WriteLine("rejected " + 100 * (float)numRejected / (float)(depthWidth * depthHeight) + "% pixels for high variance");
+                Console.WriteLine("rejected " + 100 * (float)numRejected / (float)(Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight) + "% pixels for high variance");
 
             }
 
@@ -616,9 +616,9 @@ namespace RoomAliveToolkit
                 {
                     string cameraDirectory = projectorDirectory + "/camera" + camera.name;
 
-                    var decodedColumns = new ShortImage(colorWidth, colorHeight);
-                    var decodedRows = new ShortImage(colorWidth, colorHeight);
-                    var mask = new ByteImage(colorWidth, colorHeight);
+                    var decodedColumns = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                    var decodedRows = new ShortImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+                    var mask = new ByteImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
 
                     LoadFromTiff(imagingFactory, decodedColumns, cameraDirectory + "/decodedColumns.tiff");
                     LoadFromTiff(imagingFactory, decodedRows, cameraDirectory + "/decodedRows.tiff");
@@ -641,9 +641,9 @@ namespace RoomAliveToolkit
                         // Our Gray code images are flipped in the horizontal direction.
                         // Therefore to map an image space coordinate to a memory location we flip Y (and not X):
                         int x = (int)(colorImagePoint[0] + 0.5f);
-                        int y = colorHeight - (int)(colorImagePoint[1] + 0.5f);
+                        int y = Kinect2Calibration.colorImageHeight - (int)(colorImagePoint[1] + 0.5f);
 
-                        if ((x < 0) || (x >= colorWidth) || (y < 0) || (y >= colorHeight))
+                        if ((x < 0) || (x >= Kinect2Calibration.colorImageWidth) || (y < 0) || (y >= Kinect2Calibration.colorImageHeight))
                         {
                             //Console.WriteLine("out of bounds");
                             continue;
@@ -861,6 +861,8 @@ namespace RoomAliveToolkit
                         Console.WriteLine("error with inliers = " + error2);
                         Console.Write("camera matrix = \n" + cameraMatrix);
 
+                        numCompletedFits++;
+
                         // if err < besterr save model (save rotation and translation to calibrationPointSets, cameraMatrix and distortion coeffs to projector)
                         if (error < minError)
                         {
@@ -868,7 +870,6 @@ namespace RoomAliveToolkit
                             projector.cameraMatrix = cameraMatrix;
                             projector.lensDistortion = distCoeffs;
                             setIndex = 0;
-                            numCompletedFits++;
 
                             foreach (var pointSet in projector.calibrationPointSets.Values)
                             {
@@ -1443,7 +1444,13 @@ namespace RoomAliveToolkit
         public void SaveToOBJ(string directory)
         {
             // force decimal point so standard programs like MeshLab can read this
-            System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator = ".";
+            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
+            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
+            {
+                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+            }
 
             var objDirectory = directory + "//obj";
 
@@ -1465,7 +1472,7 @@ namespace RoomAliveToolkit
             var mtlFileWriter = new StreamWriter(objDirectory + "/ensemble.mtl");
             streamWriter.WriteLine("mtllib ensemble.mtl");
             uint nextVertexIndex = 1;
-            var depthImage = new FloatImage(depthWidth, depthHeight);
+            var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
 
             foreach (var camera in cameras)
             {
@@ -1488,18 +1495,18 @@ namespace RoomAliveToolkit
 
                 var calibration = camera.calibration;
                 var depthFrameToCameraSpaceTable = calibration.ComputeDepthFrameToCameraSpaceTable();
-                var vertices = new Vertex[depthWidth * depthHeight];
+                var vertices = new Vertex[Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight];
                 var colorCamera = new Matrix(4, 1);
                 var depthCamera = new Matrix(4, 1);
                 var world = new Matrix(4, 1);
 
-                for (int y = 0; y < depthHeight; y++)
-                    for (int x = 0; x < depthWidth; x++)
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         // depth camera coords
                         var depth = depthImage[x, y] / 1000f; // m
                         // convert to depth camera space
-                        var point = depthFrameToCameraSpaceTable[depthWidth * y + x];
+                        var point = depthFrameToCameraSpaceTable[Kinect2Calibration.depthImageWidth * y + x];
                         depthCamera[0] = point.X * depth;
                         depthCamera[1] = point.Y * depth;
                         depthCamera[2] = depth;
@@ -1516,8 +1523,8 @@ namespace RoomAliveToolkit
                         // project to color image
                         double colorU, colorV;
                         CameraMath.Project(calibration.colorCameraMatrix, calibration.colorLensDistortion, colorCamera[0], colorCamera[1], colorCamera[2], out colorU, out colorV);
-                        colorU /= (double)colorWidth;
-                        colorV /= (double)colorHeight;
+                        colorU /= (double)Kinect2Calibration.colorImageWidth;
+                        colorV /= (double)Kinect2Calibration.colorImageHeight;
 
                         var vertex = new Vertex();
                         vertex.x = (float)world[0];
@@ -1525,7 +1532,7 @@ namespace RoomAliveToolkit
                         vertex.z = (float)world[2];
                         vertex.u = (float)colorU;
                         vertex.v = (float)colorV;
-                        vertices[depthWidth * y + x] = vertex;
+                        vertices[Kinect2Calibration.depthImageWidth * y + x] = vertex;
 
                     }
 
@@ -1533,16 +1540,16 @@ namespace RoomAliveToolkit
                 streamWriter.WriteLine("usemtl camera" + camera.name);
 
                 // examine each triangle
-                for (int y = 0; y < depthHeight - 1; y++)
-                    for (int x = 0; x < depthWidth - 1; x++)
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight - 1; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth - 1; x++)
                     {
                         int offseti = 0;
                         for (int tri = 0; tri < 2; tri++)
                         {
                             // the indexes of the vertices of this triangle
-                            var i0 = depthWidth * (y + quadOffsets[offseti].Y) + (x + quadOffsets[offseti].X);
-                            var i1 = depthWidth * (y + quadOffsets[offseti + 1].Y) + (x + quadOffsets[offseti + 1].X);
-                            var i2 = depthWidth * (y + quadOffsets[offseti + 2].Y) + (x + quadOffsets[offseti + 2].X);
+                            var i0 = Kinect2Calibration.depthImageWidth * (y + quadOffsets[offseti].Y) + (x + quadOffsets[offseti].X);
+                            var i1 = Kinect2Calibration.depthImageWidth * (y + quadOffsets[offseti + 1].Y) + (x + quadOffsets[offseti + 1].X);
+                            var i2 = Kinect2Calibration.depthImageWidth * (y + quadOffsets[offseti + 2].Y) + (x + quadOffsets[offseti + 2].X);
 
                             // is triangle valid?
                             bool nonZero = (vertices[i0].z != 0) && (vertices[i1].z != 0) && (vertices[i2].z != 0);
@@ -1580,7 +1587,7 @@ namespace RoomAliveToolkit
             mtlFileWriter.Close();
         }
    
-        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, UnmanagedImage image, string filename, int bytesPerPixel)
+        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory imagingFactory, UnmanagedImage image, string filename, int bytesPerPixel)
         {
             // TODO: this function is more generic; rewrite to handle different formats/bytesPerPixel
             var decoder = new SharpDX.WIC.BitmapDecoder(imagingFactory, filename, SharpDX.WIC.DecodeOptions.CacheOnLoad);
@@ -1590,27 +1597,27 @@ namespace RoomAliveToolkit
             decoder.Dispose();
         }
 
-        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ByteImage image, string filename)
+        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory imagingFactory, ByteImage image, string filename)
         {
             LoadFromTiff(imagingFactory, image, filename, 1);
         }
 
-        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ShortImage image, string filename)
+        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory imagingFactory, ShortImage image, string filename)
         {
             LoadFromTiff(imagingFactory, image, filename, 2);
         }
 
-        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ARGBImage image, string filename)
+        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory imagingFactory, ARGBImage image, string filename)
         {
             LoadFromTiff(imagingFactory, image, filename, 4);
         }
 
-        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, RGBImage image, string filename)
+        static public void LoadFromTiff(SharpDX.WIC.ImagingFactory imagingFactory, RGBImage image, string filename)
         {
             LoadFromTiff(imagingFactory, image, filename, 3);
         }
 
-        static public void SaveToTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, UnmanagedImage image, string filename, Guid format, int bytesPerPixel)
+        static public void SaveToTiff(SharpDX.WIC.ImagingFactory imagingFactory, UnmanagedImage image, string filename, Guid format, int bytesPerPixel)
         {
             var file = new System.IO.FileStream(filename, System.IO.FileMode.Create);
             var stream = new SharpDX.WIC.WICStream(imagingFactory, file);
@@ -1631,17 +1638,17 @@ namespace RoomAliveToolkit
             file.Dispose();
         }
 
-        static public void SaveToTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ByteImage image, string filename)
+        static public void SaveToTiff(SharpDX.WIC.ImagingFactory imagingFactory, ByteImage image, string filename)
         {
             SaveToTiff(imagingFactory, image, filename, SharpDX.WIC.PixelFormat.Format8bppGray, 1);
         }
 
-        static public void SaveToTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ShortImage image, string filename)
+        static public void SaveToTiff(SharpDX.WIC.ImagingFactory imagingFactory, ShortImage image, string filename)
         {
             SaveToTiff(imagingFactory, image, filename, SharpDX.WIC.PixelFormat.Format16bppGray, 2);
         }
 
-        static public void SaveToTiff(SharpDX.WIC.ImagingFactory2 imagingFactory, ARGBImage image, string filename)
+        static public void SaveToTiff(SharpDX.WIC.ImagingFactory imagingFactory, ARGBImage image, string filename)
         {
             SaveToTiff(imagingFactory, image, filename, SharpDX.WIC.PixelFormat.Format32bppRGBA, 4);
         }
@@ -1649,7 +1656,13 @@ namespace RoomAliveToolkit
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
             // force decimal point so standard programs like MeshLab can read this
-            System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator = ".";
+            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
+            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
+            {
+                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+            }
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename, false, Encoding.ASCII))
             {

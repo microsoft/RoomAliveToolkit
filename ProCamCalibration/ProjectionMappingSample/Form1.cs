@@ -1,14 +1,9 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using System.Drawing;
-using SharpDX;
+﻿using SharpDX;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using SharpDX.D3DCompiler;
-using SharpDX.WIC;
-using RoomAliveToolkit;
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace RoomAliveToolkit
 {
@@ -186,7 +181,7 @@ namespace RoomAliveToolkit
             float w = projector.width;
             float h = projector.height;
 
-            projection = ProjectionMappingSample.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+            projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
             projection.Transpose();
         }
 

@@ -52,10 +52,10 @@ public interface KinectServer2
     System.Threading.Tasks.Task<long> LastColorExposureTimeTicksAsync();
     
     [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/KinectServer2/GetCalibration", ReplyAction="http://tempuri.org/KinectServer2/GetCalibrationResponse")]
-    Kinect2.Kinect2Calibration GetCalibration();
+    RoomAliveToolkit.Kinect2Calibration GetCalibration();
     
     [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/KinectServer2/GetCalibration", ReplyAction="http://tempuri.org/KinectServer2/GetCalibrationResponse")]
-    System.Threading.Tasks.Task<Kinect2.Kinect2Calibration> GetCalibrationAsync();
+    System.Threading.Tasks.Task<RoomAliveToolkit.Kinect2Calibration> GetCalibrationAsync();
 }
 
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -152,12 +152,12 @@ public partial class KinectServer2Client : System.ServiceModel.ClientBase<Kinect
         return base.Channel.LastColorExposureTimeTicksAsync();
     }
     
-    public Kinect2.Kinect2Calibration GetCalibration()
+    public RoomAliveToolkit.Kinect2Calibration GetCalibration()
     {
         return base.Channel.GetCalibration();
     }
     
-    public System.Threading.Tasks.Task<Kinect2.Kinect2Calibration> GetCalibrationAsync()
+    public System.Threading.Tasks.Task<RoomAliveToolkit.Kinect2Calibration> GetCalibrationAsync()
     {
         return base.Channel.GetCalibrationAsync();
     }

@@ -7,7 +7,7 @@
     <ProjectGuid>{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ProCamEnsembleCalibration</RootNamespace>
+    <RootNamespace>RoomAliveToolkit</RootNamespace>
     <AssemblyName>ProCamEnsembleCalibration</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -70,7 +70,8 @@
   <ItemGroup>
     <Compile Include="ARGBImage.cs" />
     <Compile Include="ByteImage.cs" />
-    <Compile Include="Calibrate.cs" />
+    <Compile Include="GraphicsTransforms.cs" />
+    <Compile Include="ProjectorCameraEnsemble.cs" />
     <Compile Include="CameraMath.cs" />
     <Compile Include="Float3Image.cs" />
     <Compile Include="FloatImage.cs" />

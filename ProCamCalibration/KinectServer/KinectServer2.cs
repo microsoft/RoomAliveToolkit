@@ -6,7 +6,7 @@ using System.ServiceModel;
 using System.ServiceModel.Discovery;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Kinect2;
+using RoomAliveToolkit;
 using System.IO;
 using SharpDX.WIC;
 
@@ -26,20 +26,16 @@ namespace RoomAliveToolkit
         KinectSensor kinectSensor;
 
         DepthFrameReader depthFrameReader;
-        public const int depthImageWidth = 512;
-        public const int depthImageHeight = 424;
-        public ushort[] depthShortBuffer = new ushort[depthImageWidth * depthImageHeight];
-        public byte[] depthByteBuffer = new byte[depthImageWidth * depthImageHeight * 2];
+        public ushort[] depthShortBuffer = new ushort[Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight];
+        public byte[] depthByteBuffer = new byte[Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2];
         public List<AutoResetEvent> depthFrameReady = new List<AutoResetEvent>();
 
         ColorFrameReader colorFrameReader;
-        public const int colorImageWidth = 1920;
-        public const int colorImageHeight = 1080;
-        public byte[] yuvByteBuffer = new byte[colorImageWidth * colorImageHeight * 2];
+        public byte[] yuvByteBuffer = new byte[Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 2];
         public List<AutoResetEvent> yuvFrameReady = new List<AutoResetEvent>();
-        public byte[] rgbByteBuffer = new byte[colorImageWidth * colorImageHeight * 4];
+        public byte[] rgbByteBuffer = new byte[Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4];
         public List<AutoResetEvent> rgbFrameReady = new List<AutoResetEvent>();
-        public byte[] jpegByteBuffer = new byte[colorImageWidth * colorImageHeight * 4];
+        public byte[] jpegByteBuffer = new byte[Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4];
         public List<AutoResetEvent> jpegFrameReady = new List<AutoResetEvent>();
         public int nJpegBytes = 0;
 
@@ -66,7 +62,7 @@ namespace RoomAliveToolkit
 
         void CoordinateMapper_CoordinateMappingChanged(object sender, CoordinateMappingChangedEventArgs e)
         {
-            kinect2Calibration = new Kinect2.Kinect2Calibration();
+            kinect2Calibration = new RoomAliveToolkit.Kinect2Calibration();
             kinect2Calibration.RecoverCalibrationFromSensor(kinectSensor);
             kinect2CalibrationReady.Set();
 
@@ -140,9 +136,9 @@ namespace RoomAliveToolkit
 
                         stopWatch.Restart();
 
-                        var bitmapSource = new Bitmap(imagingFactory, colorImageWidth, colorImageHeight, SharpDX.WIC.PixelFormat.Format32bppBGR, BitmapCreateCacheOption.CacheOnLoad);
+                        var bitmapSource = new Bitmap(imagingFactory, Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight, SharpDX.WIC.PixelFormat.Format32bppBGR, BitmapCreateCacheOption.CacheOnLoad);
                         var bitmapLock = bitmapSource.Lock(BitmapLockFlags.Write);
-                        Marshal.Copy(rgbByteBuffer, 0, bitmapLock.Data.DataPointer, colorImageWidth * colorImageHeight * 4);
+                        Marshal.Copy(rgbByteBuffer, 0, bitmapLock.Data.DataPointer, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
                         bitmapLock.Dispose();
 
                         var memoryStream = new MemoryStream();
@@ -158,7 +154,7 @@ namespace RoomAliveToolkit
                         var bitmapFrameEncode = new BitmapFrameEncode(jpegBitmapEncoder);
                         bitmapFrameEncode.Options.ImageQuality = 0.5f;
                         bitmapFrameEncode.Initialize();
-                        bitmapFrameEncode.SetSize(colorImageWidth, colorImageHeight);
+                        bitmapFrameEncode.SetSize(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
                         var pixelFormatGuid = PixelFormat.FormatDontCare;
                         bitmapFrameEncode.SetPixelFormat(ref pixelFormatGuid);
                         bitmapFrameEncode.WriteSource(bitmapSource);
@@ -271,9 +267,9 @@ namespace RoomAliveToolkit
     [ServiceContract]
     public class KinectServer2
     {
-        byte[] depthByteBuffer = new byte[KinectHandler.depthImageWidth * KinectHandler.depthImageHeight * 2];
-        byte[] yuvByteBuffer = new byte[KinectHandler.colorImageWidth * KinectHandler.colorImageHeight * 2];
-        byte[] rgbByteBuffer = new byte[KinectHandler.colorImageWidth * KinectHandler.colorImageHeight * 4];
+        byte[] depthByteBuffer = new byte[Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2];
+        byte[] yuvByteBuffer = new byte[Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 2];
+        byte[] rgbByteBuffer = new byte[Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4];
 
         AutoResetEvent depthFrameReady = new AutoResetEvent(false);
         AutoResetEvent yuvFrameReady = new AutoResetEvent(false);
@@ -329,7 +325,7 @@ namespace RoomAliveToolkit
             depthFrameReady.WaitOne();
             // Is this copy really necessary?:
             lock (KinectHandler.instance.depthShortBuffer)
-                Buffer.BlockCopy(KinectHandler.instance.depthShortBuffer, 0, depthByteBuffer, 0, KinectHandler.depthImageWidth * KinectHandler.depthImageHeight * 2);
+                Buffer.BlockCopy(KinectHandler.instance.depthShortBuffer, 0, depthByteBuffer, 0, Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2);
             return depthByteBuffer;
         }
 
@@ -338,7 +334,7 @@ namespace RoomAliveToolkit
         {
             yuvFrameReady.WaitOne();
             lock (KinectHandler.instance.yuvByteBuffer)
-                Buffer.BlockCopy(KinectHandler.instance.yuvByteBuffer, 0, yuvByteBuffer, 0, KinectHandler.colorImageWidth * KinectHandler.colorImageHeight * 2);
+                Buffer.BlockCopy(KinectHandler.instance.yuvByteBuffer, 0, yuvByteBuffer, 0, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 2);
             return yuvByteBuffer;
         }
 
@@ -347,7 +343,7 @@ namespace RoomAliveToolkit
         {
             rgbFrameReady.WaitOne();
             lock (KinectHandler.instance.rgbByteBuffer)
-                Buffer.BlockCopy(KinectHandler.instance.rgbByteBuffer, 0, rgbByteBuffer, 0, KinectHandler.colorImageWidth * KinectHandler.colorImageHeight * 4);
+                Buffer.BlockCopy(KinectHandler.instance.rgbByteBuffer, 0, rgbByteBuffer, 0, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
             return rgbByteBuffer;
         }
 

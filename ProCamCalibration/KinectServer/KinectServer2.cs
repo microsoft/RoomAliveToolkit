@@ -66,6 +66,8 @@ namespace RoomAliveToolkit
             kinect2Calibration.RecoverCalibrationFromSensor(kinectSensor);
             kinect2CalibrationReady.Set();
 
+            //CoordinateMappingExample.Run(kinect2Calibration, kinectSensor);
+
             depthFrameReader = kinectSensor.DepthFrameSource.OpenReader();
             depthFrameReader.FrameArrived += depthFrameReader_FrameArrived;
 

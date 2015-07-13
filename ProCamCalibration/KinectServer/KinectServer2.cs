@@ -60,13 +60,16 @@ namespace RoomAliveToolkit
             kinectSensor.Open();
         }
 
+        CoordinateMappingExample cooordinateMappingExample;
+
         void CoordinateMapper_CoordinateMappingChanged(object sender, CoordinateMappingChangedEventArgs e)
         {
             kinect2Calibration = new RoomAliveToolkit.Kinect2Calibration();
             kinect2Calibration.RecoverCalibrationFromSensor(kinectSensor);
             kinect2CalibrationReady.Set();
 
-            //CoordinateMappingExample.Run(kinect2Calibration, kinectSensor);
+            //cooordinateMappingExample = new CoordinateMappingExample();
+            //cooordinateMappingExample.Run(kinect2Calibration, kinectSensor);
 
             depthFrameReader = kinectSensor.DepthFrameSource.OpenReader();
             depthFrameReader.FrameArrived += depthFrameReader_FrameArrived;

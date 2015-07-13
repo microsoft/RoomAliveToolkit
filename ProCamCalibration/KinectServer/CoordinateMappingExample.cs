@@ -10,61 +10,75 @@ namespace RoomAliveToolkit
         /// </summary>
         /// <param name="calibration"></param>
         /// <param name="kinectSensor"></param>
-        public static void Run(Kinect2Calibration calibration, KinectSensor kinectSensor)
+        public void Run(Kinect2Calibration calibration, KinectSensor kinectSensor)
         {
-            // depth image coordinates to convert
-            int x = 100, y = 100;
-            ushort depthImageValue = 2000; // depth image values are in mm
-            float depth = (float) depthImageValue / 1000f; // convert to m, to match our calibration and the rest of the Kinect SDK
-
-            double xUndistorted, yUndistorted;
-
-            // convert to depth camera space
-            float fx = (float)calibration.depthCameraMatrix[0, 0];
-            float fy = (float)calibration.depthCameraMatrix[1, 1];
-            float cx = (float)calibration.depthCameraMatrix[0, 2];
-            float cy = (float)calibration.depthCameraMatrix[1, 2];
-            float[] kappa = new float[] { (float)calibration.depthLensDistortion[0], (float)calibration.depthLensDistortion[1] };
-            // flip y because our calibration expects y up (right handed coordinates at all times)
-            CameraMath.Undistort(fx, fy, cx, cy, kappa, x, (Kinect2Calibration.depthImageHeight - y), out xUndistorted, out yUndistorted);
-
-            //// convert to depth camera space
-            //// use lookup table to perform undistortion; this will be faster when converting lots of points
-            //// this matches the Kinect SDK's depthFrameToCameraSpace table (y down)
-            //var depthFrameToCameraSpaceTable = calibration.ComputeDepthFrameToCameraSpaceTable();
-            //var point = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
-            //xUndistorted = point.X;
-            //yUndistorted = point.Y;
-
-            var depthCamera = new Matrix(4, 1);
-            depthCamera[0] = xUndistorted * depth;
-            depthCamera[1] = yUndistorted * depth;
-            depthCamera[2] = depth;
-            depthCamera[3] = 1;
-
-            // convert to color camera space
-            var colorCamera = new Matrix(4, 1);
-            colorCamera.Mult(calibration.depthToColorTransform, depthCamera);
-            //colorCamera.Scale(1.0 / colorCamera[3]); // not necessary to divide by w in this case
-
-            // project to color image
-            double colorU, colorV;
-            CameraMath.Project(calibration.colorCameraMatrix, calibration.colorLensDistortion, colorCamera[0], colorCamera[1], colorCamera[2], out colorU, out colorV);
-
-            // convert back to Y down
-            colorV = Kinect2Calibration.colorImageHeight - colorV;
-            Console.WriteLine("our color coordinates: {0} {1}", colorU, colorV);
-
-            // compare to Kinect SDK
-            var depthSpacePoint = new DepthSpacePoint();
-            depthSpacePoint.X = x;
-            depthSpacePoint.Y = y;
-            var colorPoints = new ColorSpacePoint[1];
-            colorPoints[0] = new ColorSpacePoint();
-            kinectSensor.CoordinateMapper.MapDepthPointsToColorSpace(new DepthSpacePoint[] { depthSpacePoint }, new ushort[] { depthImageValue }, colorPoints);
-
-            Console.WriteLine("SDK's color coordinates: {0} {1}", colorPoints[0].X, colorPoints[0].Y);
+            this.calibration = calibration;
+            this.kinectSensor = kinectSensor;
+            depthImage = new ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
+            depthFrameReader = kinectSensor.DepthFrameSource.OpenReader();
+            depthFrameReader.FrameArrived += depthFrameReader_FrameArrived;
+        
         }
+
+        DepthFrameReader depthFrameReader;
+        ShortImage depthImage;
+        Kinect2Calibration calibration;
+        KinectSensor kinectSensor;
+
+        void depthFrameReader_FrameArrived(object sender, DepthFrameArrivedEventArgs e)
+        {
+            var depthFrame = e.FrameReference.AcquireFrame();
+            if (depthFrame != null)
+            {
+                using (depthFrame)
+                {
+                    depthFrame.CopyFrameDataToIntPtr(depthImage.DataIntPtr, Kinect2Calibration.depthImageWidth*Kinect2Calibration.depthImageHeight*2);
+
+                    // convert depth image coords to color image coords
+                    int x = 100, y = 100;
+                    ushort depthImageValue = depthImage[x, y]; // depth image values are in mm
+
+                    if (depthImageValue == 0)
+                    {
+                        Console.WriteLine("Sorry, depth value input coordinates is zero");
+                        return;
+                    }
+
+                    float depth = (float)depthImageValue / 1000f; // convert to m, to match our calibration and the rest of the Kinect SDK
+                    double colorX, colorY;
+                    calibration.DepthImageToColorImage(x, y, depth, out colorX, out colorY);
+
+                    //// when converting many points, it may be faster to precompute pass in the distortion table:
+                    //var depthFrameToCameraSpaceTable = calibration.ComputeDepthFrameToCameraSpaceTable();
+                    //calibration.DepthImageToColorImage(x, y, depth, depthFrameToCameraSpaceTable, out colorX, out colorY);
+
+                    Console.WriteLine("our color coordinates: {0} {1}", colorX, colorY);
+
+                    // compare to Kinect SDK
+                    var depthSpacePoint = new DepthSpacePoint();
+                    depthSpacePoint.X = x;
+                    depthSpacePoint.Y = y;
+                    var colorSpacePoint = kinectSensor.CoordinateMapper.MapDepthPointToColorSpace(depthSpacePoint, depthImageValue);
+                    Console.WriteLine("SDK's color coordinates: {0} {1}", colorSpacePoint.X, colorSpacePoint.Y);
+
+                    // convert back to depth image
+                    Matrix depthPoint;
+                    double depthX, depthY;
+
+                    calibration.ColorImageToDepthImage(colorX, colorY, depthImage, out depthPoint, out depthX, out depthY);
+
+                    //// when converting many points, it may be faster to precompute and pass in the distortion table:
+                    //var colorFrameToCameraSapceTable = calibration.ComputeColorFrameToCameraSpaceTable();
+                    //calibration.ColorImageToDepthImage((int)colorX, (int)colorY, depthImage, colorFrameToCameraSapceTable, out depthPoint, out depthX, out depthY);
+
+                    Console.WriteLine("convert back to depth: {0} {1}", depthX, depthY);
+                }
+            }
+
+        
+        
+        }
+
 
     }
 }

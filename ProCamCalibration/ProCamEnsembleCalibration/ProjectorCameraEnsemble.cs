@@ -1702,7 +1702,9 @@ namespace RoomAliveToolkit
         {
             double angle = rotationVector.Norm();
             var axis = new SharpDX.Vector3((float)(rotationVector[0] / angle), (float)(rotationVector[1] / angle), (float)(rotationVector[2] / angle));
-            var sR = SharpDX.Matrix.RotationAxis(axis, -(float)angle); // TODO: why sign?
+
+            // Why the negative sign? SharpDX returns a post-multiply matrix. Instead of transposing to get the pre-multiply matrix we just invert the input rotation.
+            var sR = SharpDX.Matrix.RotationAxis(axis, -(float)angle); 
 
             var R = new Matrix(3, 3);
             for (int i = 0; i < 3; i++)
@@ -1718,6 +1720,8 @@ namespace RoomAliveToolkit
                 for (int j = 0; j < 3; j++)
                     sR[i, j] = (float) R[i, j];
             var q = SharpDX.Quaternion.RotationMatrix(sR);
+
+            // Why the negative sign? SharpDX assumes a post-multiply rotation matrix. Instead of transposing the input we invert the output quaternion.
             var sRotationVector = -q.Angle * q.Axis;
 
             var rotationVector = new Matrix(3, 1);

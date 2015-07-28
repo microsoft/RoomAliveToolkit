@@ -7,7 +7,7 @@ This document has a few things you should know about using the toolkit's project
 
 # Prerequisites
 
-* Visual Studio 2013
+* Visual Studio 2015 Community Edition (or better)
 * Kinect for Windows v2 SDK
 
 The project uses SharpDX and Math.NET Numerics packages. These should be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.

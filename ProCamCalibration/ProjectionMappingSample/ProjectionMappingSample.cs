@@ -1,5 +1,4 @@
-﻿using RoomAliveToolkit;
-using SharpDX;
+﻿using SharpDX;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.WIC;
@@ -8,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 using Microsoft.Kinect;
+using System.Runtime.InteropServices;
 
 namespace RoomAliveToolkit
 {
@@ -85,6 +85,33 @@ namespace RoomAliveToolkit
             // user view viewport
             userViewViewport = new Viewport(0, 0, userViewTextureWidth, userViewTextureHeight, 0f, 1f);
 
+            // desktop region texture
+
+            if (desktopDuplicationEnabled)
+            {
+                windowPtr = FindWindow(null, "Untitled - Notepad");
+
+                // maybe use FindWindowEx to find child window
+
+                var rect = new RECT();
+                GetWindowRect(windowPtr, out rect);
+                var desktopTextureDesc = new Texture2DDescription()
+                {
+                    Width = (rect.Right + rightNudge) - (rect.Left + leftNudge),
+                    Height = (rect.Bottom + bottomNudge) - (rect.Top + topNudge),
+                    MipLevels = 1, // revisit this; we may benefit from mipmapping?
+                    ArraySize = 1,
+                    Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
+                    SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
+                    Usage = ResourceUsage.Default,
+                    BindFlags = BindFlags.ShaderResource,
+                    CpuAccessFlags = CpuAccessFlags.None,
+                };
+                desktopTexture = new Texture2D(device, desktopTextureDesc);
+                desktopTextureSRV = new ShaderResourceView(device, desktopTexture);
+            }
+
+
 
             // create a form for each projector
             foreach (var projector in ensemble.projectors)
@@ -150,7 +177,7 @@ namespace RoomAliveToolkit
         Object renderLock = new Object();
         RenderTargetView userViewRenderTargetView, filteredUserViewRenderTargetView;
         DepthStencilView userViewDepthStencilView;
-        ShaderResourceView userViewSRV, filteredUserViewSRV;
+        ShaderResourceView userViewSRV, filteredUserViewSRV, desktopTextureSRV;
         Viewport userViewViewport;
         SharpDX.Direct3D11.Device device;
         ProjectorCameraEnsemble ensemble;
@@ -163,6 +190,13 @@ namespace RoomAliveToolkit
         BilateralFilter bilateralFilter;
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         PointLight pointLight = new PointLight();
+        Texture2D desktopTexture;
+
+        IntPtr windowPtr;
+        const int leftNudge = 9;
+        const int topNudge = -10;
+        const int rightNudge = 0;
+        const int bottomNudge = 60;
 
 
         SharpDX.WIC.ImagingFactory2 imagingFactory = new ImagingFactory2();
@@ -174,7 +208,7 @@ namespace RoomAliveToolkit
         bool localHeadTrackingEnabled = Properties.Settings.Default.LocalHeadTrackingEnabled;
         bool liveDepthEnabled = Properties.Settings.Default.LiveDepthEnabled;
         bool fullScreenEnabled = Properties.Settings.Default.FullScreenEnabled;
-        bool desktopDuplication = Properties.Settings.Default.DesktopDuplicationEnabled;
+        bool desktopDuplicationEnabled = Properties.Settings.Default.DesktopDuplicationEnabled;
 
         void RenderLoop()
         {
@@ -282,16 +316,28 @@ namespace RoomAliveToolkit
                     }
 
 
-                    SharpDX.DXGI.Resource resource = null;
-                    Texture2D texture = null;
-                    ShaderResourceView textureSRV = null;
-
-                    if (desktopDuplication)
+                    // desktop duplication
+                    if (desktopDuplicationEnabled)
                     {
                         var outputDuplicateFrameInformation = default(OutputDuplicateFrameInformation);
+                        SharpDX.DXGI.Resource resource = null;
                         outputDuplication.AcquireNextFrame(1000, out outputDuplicateFrameInformation, out resource);
-                        texture = resource.QueryInterface<Texture2D>();
-                        textureSRV = new ShaderResourceView(device, texture);
+                        var texture = resource.QueryInterface<Texture2D>();
+
+                        var rect = new RECT();
+                        GetWindowRect(windowPtr, out rect);
+
+                        var sourceRegion = new ResourceRegion()
+                        {
+                            Left = rect.Left + leftNudge,
+                            Right = rect.Right + rightNudge,
+                            Top = rect.Top + topNudge,
+                            Bottom = rect.Bottom + bottomNudge,
+                            Front = 0,
+                            Back = 1,
+                        };
+                        deviceContext.CopySubresourceRegion(texture, 0, sourceRegion, desktopTexture, 0);
+                        texture.Dispose();
                     }
 
 
@@ -306,9 +352,9 @@ namespace RoomAliveToolkit
                     {
                         passThroughShader.Render(deviceContext, filteredUserViewSRV, userViewForm.renderTargetView);
                     }
-                    if (desktopDuplication)
+                    if (desktopDuplicationEnabled)
                     {
-                        passThroughShader.Render(deviceContext, textureSRV, userViewForm.renderTargetView);
+                        passThroughShader.Render(deviceContext, desktopTextureSRV, userViewForm.renderTargetView);
                     }
                     userViewForm.swapChain.Present(0, PresentFlags.None);
 
@@ -345,20 +391,16 @@ namespace RoomAliveToolkit
                                 projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, filteredUserViewSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
                             if (threeDObjectEnabled)
                                 projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, userViewSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
-                            if (desktopDuplication)
-                                projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, textureSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
+                            if (desktopDuplicationEnabled)
+                                projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, desktopTextureSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
                         }
 
                         form.swapChain.Present(1, PresentFlags.None);
                     }
 
 
-                    if (desktopDuplication)
-                    {
-                        textureSRV.Dispose();
-                        texture.Dispose();
+                    if (desktopDuplicationEnabled)
                         outputDuplication.ReleaseFrame();
-                    }
 
 
                     Console.WriteLine(stopwatch.ElapsedMilliseconds);
@@ -757,7 +799,17 @@ namespace RoomAliveToolkit
             }
         }
 
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left, Top, Right, Bottom;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
     }
 }

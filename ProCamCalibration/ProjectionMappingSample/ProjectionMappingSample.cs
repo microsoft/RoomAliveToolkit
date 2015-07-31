@@ -27,9 +27,9 @@ namespace RoomAliveToolkit
             ensemble = RoomAliveToolkit.ProjectorCameraEnsemble.FromFile(path);
 
             // create d3d device
-            var factory = new Factory();
+            var factory = new Factory1();
             var adapter = factory.Adapters[0];
-            device = new SharpDX.Direct3D11.Device(adapter, DeviceCreationFlags.None);
+            device = new SharpDX.Direct3D11.Device(adapter, DeviceCreationFlags.Debug);
 
             // shaders
             depthAndColorShader = new DepthAndColorShader(device);
@@ -100,6 +100,10 @@ namespace RoomAliveToolkit
             var mesh = Mesh.FromOBJFile("Content/FloorPlan.obj");
             meshDeviceResources = new MeshDeviceResources(device, imagingFactory, mesh);
 
+            // desktop duplication
+            var output = new Output1(factory.Adapters[0].Outputs[0].NativePointer); // TODO: change adapter and output number
+            outputDuplication = output.DuplicateOutput(device);
+
 
             userViewForm = new MainForm(factory, device, renderLock);
             userViewForm.Show();
@@ -132,6 +136,9 @@ namespace RoomAliveToolkit
         {
             alpha = 0;
         }
+
+
+        OutputDuplication outputDuplication;
 
 
         const int userViewTextureWidth = 2000;
@@ -167,7 +174,7 @@ namespace RoomAliveToolkit
         bool localHeadTrackingEnabled = Properties.Settings.Default.LocalHeadTrackingEnabled;
         bool liveDepthEnabled = Properties.Settings.Default.LiveDepthEnabled;
         bool fullScreenEnabled = Properties.Settings.Default.FullScreenEnabled;
-
+        bool desktopDuplication = Properties.Settings.Default.DesktopDuplicationEnabled;
 
         void RenderLoop()
         {
@@ -275,14 +282,35 @@ namespace RoomAliveToolkit
                     }
 
 
+                    SharpDX.DXGI.Resource resource = null;
+                    Texture2D texture = null;
+                    ShaderResourceView textureSRV = null;
+
+                    if (desktopDuplication)
+                    {
+                        var outputDuplicateFrameInformation = default(OutputDuplicateFrameInformation);
+                        outputDuplication.AcquireNextFrame(1000, out outputDuplicateFrameInformation, out resource);
+                        texture = resource.QueryInterface<Texture2D>();
+                        textureSRV = new ShaderResourceView(device, texture);
+                    }
+
+
                     // render user view to seperate form
                     passThroughShader.viewport = new Viewport(0, 0, userViewForm.Width, userViewForm.Height);
-                    if (wobbleEffectEnabled)
-                        passThroughShader.Render(deviceContext, filteredUserViewSRV, userViewForm.renderTargetView);
-                    else
+                    // TODO: clean this up by simply using a pointer to the userViewSRV
+                    if (threeDObjectEnabled)
+                    {
                         passThroughShader.Render(deviceContext, userViewSRV, userViewForm.renderTargetView);
+                    }
+                    if (wobbleEffectEnabled)
+                    {
+                        passThroughShader.Render(deviceContext, filteredUserViewSRV, userViewForm.renderTargetView);
+                    }
+                    if (desktopDuplication)
+                    {
+                        passThroughShader.Render(deviceContext, textureSRV, userViewForm.renderTargetView);
+                    }
                     userViewForm.swapChain.Present(0, PresentFlags.None);
-
 
                     // projection puts x and y in [-1,1]; adjust to obtain texture coordinates [0,1]
                     // TODO: put this in SetContants?
@@ -311,14 +339,27 @@ namespace RoomAliveToolkit
                             var userWorldViewProjection = world * userView * userProjection;
 
                             projectiveTexturingShader.SetConstants(deviceContext, userWorldViewProjection, projectorWorldViewProjection);
+
+                            // TODO: clean this up by simply using a pointer to the userViewSRV
                             if (wobbleEffectEnabled)
                                 projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, filteredUserViewSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
-                            else
+                            if (threeDObjectEnabled)
                                 projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, userViewSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
+                            if (desktopDuplication)
+                                projectiveTexturingShader.Render(deviceContext, cameraDeviceResource.floatDepthImageRV, textureSRV, cameraDeviceResource.vertexBuffer, form.renderTargetView, form.depthStencilView, form.viewport);
                         }
 
                         form.swapChain.Present(1, PresentFlags.None);
                     }
+
+
+                    if (desktopDuplication)
+                    {
+                        textureSRV.Dispose();
+                        texture.Dispose();
+                        outputDuplication.ReleaseFrame();
+                    }
+
 
                     Console.WriteLine(stopwatch.ElapsedMilliseconds);
                     stopwatch.Restart();

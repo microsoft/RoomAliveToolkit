@@ -31,6 +31,7 @@ namespace RoomAliveToolkit
         ProjectorCameraEnsemble ensemble;
         string path, directory;
         string[] args;
+        bool unsavedChanges = false;
 
         protected override void OnLoad(EventArgs e)
         {
@@ -693,6 +694,12 @@ namespace RoomAliveToolkit
             new System.Threading.Thread(Solve).Start();
         }
 
+        private void acquireDepthAndColorOnlyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            calibrateToolStripMenuItem.Enabled = false;
+            new System.Threading.Thread(AcquireDepthAndColor).Start();
+        }
+
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var newDialog = new NewDialog();
@@ -717,7 +724,9 @@ namespace RoomAliveToolkit
                     catch (Exception ex)
                     {
                         Console.WriteLine("Could not save file to disk.\n" + ex);
+                        return;
                     }
+                    unsavedChanges = false;
                     lock (renderLock)
                     {
                         ensemble = newEnsemble;
@@ -741,7 +750,9 @@ namespace RoomAliveToolkit
             catch (Exception ex)
             {
                 Console.WriteLine("Could not save file to disk.\n" + ex);
+                return;
             }
+            unsavedChanges = false;
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -778,7 +789,9 @@ namespace RoomAliveToolkit
                 catch (Exception ex)
                 {
                     Console.WriteLine("Could not save file to disk.\n" + ex);
+                    return;
                 }
+                unsavedChanges = false;
             }
         }
 
@@ -927,16 +940,17 @@ namespace RoomAliveToolkit
                 }
         }
 
-        private void Form4_FormClosed(object sender, FormClosedEventArgs e)
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            SaveSettings();
-            Environment.Exit(0);
+            if (!Exit())
+                e.Cancel = true;
         }
+
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SaveSettings();
-            Environment.Exit(0);
+            Exit();
         }
 
         void SaveSettings()
@@ -947,6 +961,35 @@ namespace RoomAliveToolkit
             Properties.Settings.Default.Save();
         }
 
+        bool Exit()
+        {
+            if (unsavedChanges && (ensemble != null))
+            {
+                var unsavedChangesDialog = new UnsavedChangesDialog(Path.GetFileNameWithoutExtension(path));
+                var result = unsavedChangesDialog.ShowDialog();
+                switch (result)
+                {
+                    case DialogResult.Yes: // save
+                        try
+                        {
+                            ensemble.Save(path);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Could not save file to disk.\n" + ex);
+                            return false;
+                        }
+                        break;
+                    case DialogResult.No: // don't save
+                        break;
+                    case DialogResult.Cancel:
+                        return false;
+                }
+            }
+            SaveSettings();
+            Environment.Exit(0);
+            return true;
+        }
         #endregion
 
 
@@ -1044,6 +1087,7 @@ namespace RoomAliveToolkit
                     return;
                 }
                 EnsembleChanged();
+                unsavedChanges = false;
             }
         }
 
@@ -1059,6 +1103,7 @@ namespace RoomAliveToolkit
                 Console.WriteLine("Acquire failed\n" + e);
             }
             Console.WriteLine("Acquire complete");
+            unsavedChanges = true;
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
 
@@ -1076,9 +1121,23 @@ namespace RoomAliveToolkit
                 Console.WriteLine("Solve failed\n" + e);
             }
             Console.WriteLine("Solve complete");
+            unsavedChanges = true;
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
 
+        void AcquireDepthAndColor()
+        {
+            try
+            {
+                ensemble.CaptureDepthAndColor(directory);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Acquire Depth and Color failed\n" + e);
+            }
+            Console.WriteLine("Acquire Depth and Color complete");
+            Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
+        }
 
         // could be method on Projector:
         void SetViewProjectionFromProjector(ProjectorCameraEnsemble.Projector projector)

@@ -782,6 +782,27 @@ namespace RoomAliveToolkit
             }
         }
 
+        private void saveToOBJToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var saveFileDialog = new SaveFileDialog();
+
+            saveFileDialog.Filter = "obj files (*.obj)|*.obj|All files (*.*)|*.*";
+            saveFileDialog.FilterIndex = 0;
+            saveFileDialog.RestoreDirectory = true;
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    ensemble.SaveToOBJ(directory, saveFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Could not save file to disk.\n" + ex);
+                }
+            }
+        }
+
         private void discoverCamerasToolStripMenuItem_Click(object sender, EventArgs e)
         {
             new System.Threading.Thread(DiscoverCameras).Start();
@@ -1040,6 +1061,7 @@ namespace RoomAliveToolkit
             Console.WriteLine("Acquire complete");
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
+
 
         void Solve()
         {

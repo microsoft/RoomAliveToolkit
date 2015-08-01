@@ -1441,7 +1441,7 @@ namespace RoomAliveToolkit
             }
         }
 
-        public void SaveToOBJ(string directory)
+        public void SaveToOBJ(string directory, string objPath)
         {
             // force decimal point so standard programs like MeshLab can read this
             string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
@@ -1452,7 +1452,8 @@ namespace RoomAliveToolkit
                 System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
             }
 
-            var objDirectory = directory + "//obj";
+            var objFilename = Path.GetFileNameWithoutExtension(objPath);
+            var objDirectory = Path.GetDirectoryName(objPath);
 
             if (!Directory.Exists(objDirectory))
                 Directory.CreateDirectory(objDirectory);
@@ -1468,9 +1469,9 @@ namespace RoomAliveToolkit
                 new System.Drawing.Point(0, 1),
             };
 
-            var streamWriter = new StreamWriter(objDirectory + "/ensemble.obj");
-            var mtlFileWriter = new StreamWriter(objDirectory + "/ensemble.mtl");
-            streamWriter.WriteLine("mtllib ensemble.mtl");
+            var streamWriter = new StreamWriter(objDirectory + "/" + objFilename + ".obj");
+            var mtlFileWriter = new StreamWriter(objDirectory + "/" + objFilename + ".mtl");
+            streamWriter.WriteLine("mtllib " + objFilename + ".mtl");
             uint nextVertexIndex = 1;
             var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
 
@@ -1483,9 +1484,9 @@ namespace RoomAliveToolkit
                 mtlFileWriter.WriteLine("Tr 1.000000");
                 mtlFileWriter.WriteLine("illum 1");
                 mtlFileWriter.WriteLine("Ns 0.000000");
-                mtlFileWriter.WriteLine("map_Kd camera" + camera.name + ".jpg");
+                mtlFileWriter.WriteLine("map_Kd " + objFilename + "_" + camera.name + ".jpg");
 
-                File.Copy(directory + "/camera" + camera.name + "/color.jpg", objDirectory + "//camera" + camera.name + ".jpg", true);
+                File.Copy(directory + "/camera" + camera.name + "/color.jpg", objDirectory + "/" + objFilename + "_" + camera.name + ".jpg", true);
                 
                 streamWriter.WriteLine("usemtl camera" + camera.name);
 

@@ -221,22 +221,24 @@ namespace RoomAliveToolkit
             // let AGC settle
             System.Threading.Thread.Sleep(2000);
 
-            // save an image with projector name displayed, useful for later for visualization of results
-            foreach (var camera in cameras)
-            {
-                string cameraDirectory = directory + "/camera" + camera.name;
-                if (!Directory.Exists(cameraDirectory))
-                    Directory.CreateDirectory(cameraDirectory);
-                //var jpegBytes = camera.client.LatestJPEGImage();
-                //File.WriteAllBytes(cameraDirectory + "/projectorLabels.jpg", jpegBytes);
-                var colorBytes = camera.Client.LatestRGBImage();
-                var image = new ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
-                Marshal.Copy(colorBytes, 0, image.DataIntPtr, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
-                SaveToTiff(imagingFactory, image, cameraDirectory + "/projectorLabels.tiff");
-                image.Dispose();
-            }
+            CaptureDepthAndColor(directory);
 
-            // TODO: consider combining with later aquiring color and depth
+            //// save an image with projector name displayed, useful for later for visualization of results
+            //foreach (var camera in cameras)
+            //{
+            //    string cameraDirectory = directory + "/camera" + camera.name;
+            //    if (!Directory.Exists(cameraDirectory))
+            //        Directory.CreateDirectory(cameraDirectory);
+            //    //var jpegBytes = camera.client.LatestJPEGImage();
+            //    //File.WriteAllBytes(cameraDirectory + "/projectorLabels.jpg", jpegBytes);
+            //    var colorBytes = camera.Client.LatestRGBImage();
+            //    var image = new ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
+            //    Marshal.Copy(colorBytes, 0, image.DataIntPtr, Kinect2Calibration.colorImageWidth * Kinect2Calibration.colorImageHeight * 4);
+            //    SaveToTiff(imagingFactory, image, cameraDirectory + "/projectorLabels.tiff");
+            //    image.Dispose();
+            //}
+
+            //// TODO: consider combining with later aquiring color and depth
 
 
             // set all projectors to black
@@ -393,22 +395,17 @@ namespace RoomAliveToolkit
                 // TODO: consider writing OBJ instead
             }
 
-            // connect to projectors
-            foreach (var projector in projectors)
-            {
-                //var binding = new NetTcpBinding();
-                //binding.Security.Mode = SecurityMode.None;
-                //var uri = "net.tcp://" + projector.hostNameOrAddress + ":9001/ProjectorServer/service";
-                //var address = new EndpointAddress(uri);
-                //projector.client = new ProjectorServerClient(binding, address);
-                projector.Client.OpenDisplay(projector.displayIndex);
-            }
+            //// connect to projectors
+            //foreach (var projector in projectors)
+            //{
+            //    projector.Client.OpenDisplay(projector.displayIndex);
+            //}
 
 
             // collect color images; this is not necessary for calibration, but is nice to have for visualization
-            foreach (var projector in projectors)
-                projector.Client.SetColor(projector.displayIndex, 0f, 0f, 0f);
-            System.Threading.Thread.Sleep(5000);
+            //foreach (var projector in projectors)
+            //    projector.Client.SetColor(projector.displayIndex, 0f, 0f, 0f);
+            //System.Threading.Thread.Sleep(5000);
             foreach (var camera in cameras)
             {
                 // save color image
@@ -423,11 +420,11 @@ namespace RoomAliveToolkit
 
             }
 
-            // close all displays
-            foreach (var projector in projectors)
-            {
-                projector.Client.CloseDisplay(projector.displayIndex);
-            }
+            //// close all displays
+            //foreach (var projector in projectors)
+            //{
+            //    projector.Client.CloseDisplay(projector.displayIndex);
+            //}
 
         }
 

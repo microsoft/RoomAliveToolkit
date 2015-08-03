@@ -284,10 +284,10 @@ namespace RoomAliveToolkit
                 stream.Dispose();
 
 
-                if (File.Exists(directory + "/camera" + camera.name + "/projectorLabels.tiff")) // FIX: this assumes that mean.tiff is exists (very likely)
+                if (File.Exists(directory + "/camera" + camera.name + "/color.tiff")) // FIX: this assumes that mean.tiff is exists (very likely)
                 {
                     var colorImage = new RoomAliveToolkit.ARGBImage(Kinect2Calibration.colorImageWidth, Kinect2Calibration.colorImageHeight);
-                    ProjectorCameraEnsemble.LoadFromTiff(imagingFactory, colorImage, directory + "/camera" + camera.name + "/projectorLabels.tiff");
+                    ProjectorCameraEnsemble.LoadFromTiff(imagingFactory, colorImage, directory + "/camera" + camera.name + "/color.tiff");
 
                     var depthImage = new RoomAliveToolkit.ShortImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
                     ProjectorCameraEnsemble.LoadFromTiff(imagingFactory, depthImage, directory + "/camera" + camera.name + "/mean.tiff");
@@ -591,57 +591,63 @@ namespace RoomAliveToolkit
        
         void EnsembleChanged()
         {
-            // deallocate/allocate camera d3d resources
-            foreach (var cameraDeviceResource in cameraDeviceResources.Values)
-                cameraDeviceResource.Dispose();
-            cameraDeviceResources.Clear();
-
-            foreach (var camera in ensemble.cameras)
+            lock (renderLock)
             {
-                if (camera.calibration != null) // TODO: this might not be the right way to check
-                    cameraDeviceResources[camera] = new CameraDeviceResource(device, camera, renderLock, directory);
+                // deallocate/allocate camera d3d resources
+                foreach (var cameraDeviceResource in cameraDeviceResources.Values)
+                    cameraDeviceResource.Dispose();
+                cameraDeviceResources.Clear();
+
+                foreach (var camera in ensemble.cameras)
+                {
+                    if (camera.calibration != null) // TODO: this might not be the right way to check
+                        cameraDeviceResources[camera] = new CameraDeviceResource(device, camera, renderLock, directory);
+                }
             }
 
-            // build Render menu
-            foreach (var menuItem in cameraMenuItems)
-                renderToolStripMenuItem.DropDownItems.Remove(menuItem);
-            foreach (var camera in ensemble.cameras)
+            Invoke((Action)delegate
             {
-                var toolStripMenuItem = new ToolStripMenuItem("Camera " + camera.name, null, renderMenuItem_Click);
-                toolStripMenuItem.Tag = camera;
-                toolStripMenuItem.Checked = true;
-                renderToolStripMenuItem.DropDownItems.Add(toolStripMenuItem);
-                cameraMenuItems.Add(toolStripMenuItem);
-            }
+                // build Render menu
+                foreach (var menuItem in cameraMenuItems)
+                    renderToolStripMenuItem.DropDownItems.Remove(menuItem);
+                foreach (var camera in ensemble.cameras)
+                {
+                    var toolStripMenuItem = new ToolStripMenuItem("Camera " + camera.name, null, renderMenuItem_Click);
+                    toolStripMenuItem.Tag = camera;
+                    toolStripMenuItem.Checked = true;
+                    renderToolStripMenuItem.DropDownItems.Add(toolStripMenuItem);
+                    cameraMenuItems.Add(toolStripMenuItem);
+                }
 
-            // build View menu
-            foreach (var menuItem in projectorMenuItems)
-                viewToolStripMenuItem.DropDownItems.Remove(menuItem);
-            foreach (var projector in ensemble.projectors)
-            {
-                var toolStripMenuItem = new ToolStripMenuItem("Projector " + projector.name, null, viewMenuItem_Click);
-                toolStripMenuItem.Tag = projector;
-                toolStripMenuItem.Checked = false;
-                viewToolStripMenuItem.DropDownItems.Add(toolStripMenuItem);
-                projectorMenuItems.Add(toolStripMenuItem);
-            }
+                // build View menu
+                foreach (var menuItem in projectorMenuItems)
+                    viewToolStripMenuItem.DropDownItems.Remove(menuItem);
+                foreach (var projector in ensemble.projectors)
+                {
+                    var toolStripMenuItem = new ToolStripMenuItem("Projector " + projector.name, null, viewMenuItem_Click);
+                    toolStripMenuItem.Tag = projector;
+                    toolStripMenuItem.Checked = false;
+                    viewToolStripMenuItem.DropDownItems.Add(toolStripMenuItem);
+                    projectorMenuItems.Add(toolStripMenuItem);
+                }
 
-            perspectiveAtOriginToolStripMenuItem.Checked = true;
-            SetViewProjectionFromCamera(ensemble.cameras[0]);
-            manipulator.SetView(view);
-            manipulator.projection = projection;
+                perspectiveAtOriginToolStripMenuItem.Checked = true;
+                SetViewProjectionFromCamera(ensemble.cameras[0]);
+                manipulator.SetView(view);
+                manipulator.projection = projection;
 
-            // we have a file loaded, so enable menu items
-            saveToolStripMenuItem.Enabled = true;
-            saveAsToolStripMenuItem.Enabled = true;
-            reloadToolStripMenuItem.Enabled = true;
-            calibrateToolStripMenuItem.Enabled = true;
-            renderToolStripMenuItem.Enabled = true;
-            viewToolStripMenuItem.Enabled = true;
-            displayProjectorDisplayIndexesToolStripMenuItem.Enabled = true;
-            displayProjectorNamesToolStripMenuItem.Enabled = true;
+                // we have a file loaded, so enable menu items
+                saveToolStripMenuItem.Enabled = true;
+                saveAsToolStripMenuItem.Enabled = true;
+                reloadToolStripMenuItem.Enabled = true;
+                calibrateToolStripMenuItem.Enabled = true;
+                renderToolStripMenuItem.Enabled = true;
+                viewToolStripMenuItem.Enabled = true;
+                displayProjectorDisplayIndexesToolStripMenuItem.Enabled = true;
+                displayProjectorNamesToolStripMenuItem.Enabled = true;
 
-            Text = Path.GetFileName(path) + " - CalibrateEnsemble";
+                Text = Path.GetFileName(path) + " - CalibrateEnsemble";
+            });
 
         }
 
@@ -1075,9 +1081,6 @@ namespace RoomAliveToolkit
             {
                 try
                 {
-
-                    //ensemble = new ProjectorCameraEnsemble();
-
                     ensemble = ProjectorCameraEnsemble.FromFile(path);
                     Console.WriteLine("Loaded " + path);
                 }
@@ -1096,7 +1099,7 @@ namespace RoomAliveToolkit
             try
             {
                 ensemble.CaptureGrayCodes(directory);
-                ensemble.CaptureDepthAndColor(directory);
+                EnsembleChanged();
             }
             catch (Exception e)
             {
@@ -1130,6 +1133,7 @@ namespace RoomAliveToolkit
             try
             {
                 ensemble.CaptureDepthAndColor(directory);
+                EnsembleChanged();
             }
             catch (Exception e)
             {

@@ -632,6 +632,7 @@ namespace RoomAliveToolkit
                 }
 
                 perspectiveAtOriginToolStripMenuItem.Checked = true;
+                perspectiveView = true;
                 SetViewProjectionFromCamera(ensemble.cameras[0]);
                 manipulator.SetView(view);
                 manipulator.projection = projection;
@@ -664,6 +665,9 @@ namespace RoomAliveToolkit
             toolStripMenuItem.Checked = !toolStripMenuItem.Checked;
             cameraDeviceResources[camera].renderEnabled = toolStripMenuItem.Checked;
         }
+
+        bool perspectiveView = true;
+
         private void perspectiveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             perspectiveAtOriginToolStripMenuItem.Checked = true;
@@ -671,6 +675,7 @@ namespace RoomAliveToolkit
                 menuItem.Checked = false;
             SetViewProjectionFromCamera(ensemble.cameras[0]);
             manipulator.SetView(view);
+            perspectiveView = true;
         }
 
         void viewMenuItem_Click(object sender, EventArgs e)
@@ -686,6 +691,7 @@ namespace RoomAliveToolkit
             var projector = (ProjectorCameraEnsemble.Projector)toolStripMenuItem.Tag;
             SetViewProjectionFromProjector(projector);
             manipulator.SetView(view);
+            perspectiveView = false;
         }
 
         private void acquireToolStripMenuItem_Click(object sender, EventArgs e)
@@ -939,10 +945,13 @@ namespace RoomAliveToolkit
                     viewport = new Viewport(0, 0, videoPanel1.Width, videoPanel1.Height, 0f, 1f);
                     manipulator.viewport = viewport;
 
-                    // TODO: in the case of perspective projection, change projection to follow change in aspect
-                    float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-                    projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
-                    projection.Transpose();
+                    // in the case of perspective projection, change projection to follow change in aspect
+                    if (perspectiveView)
+                    {
+                        float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
+                        projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                        projection.Transpose();
+                    }
                 }
         }
 

@@ -52,15 +52,14 @@ namespace Kinect2ShaderDemo
             mouseOver = false;
         }
 
-
         bool KeyDown(char key)
         {
-            return (RoomAliveToolkit.Win32.GetAsyncKeyState((int)key) != 0);
+            return (RoomAliveToolkit.Win32.GetAsyncKeyState((int)key) >> 15 != 0);
         }
 
         bool KeyDown(int key)
         {
-            return (RoomAliveToolkit.Win32.GetAsyncKeyState(key) != 0);
+            return (RoomAliveToolkit.Win32.GetAsyncKeyState(key) >> 15 != 0);
         }
 
         public void SetView(Matrix view, bool setAsOriginalView = true)

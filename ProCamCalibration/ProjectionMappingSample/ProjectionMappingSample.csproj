@@ -137,8 +137,8 @@
       <Link>Content\DepthAndColorVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\DepthAndProjectiveTexture.cso">
-      <Link>Content\DepthAndProjectiveTexture.cso</Link>
+    <Content Include="..\x64\Debug\DepthAndProjectiveTextureVS.cso">
+      <Link>Content\DepthAndProjectiveTextureVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\x64\Debug\FromUIntPS.cso">
@@ -171,8 +171,8 @@
       <Link>Content\MeshWithTexturePS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\RadialWobble.cso">
-      <Link>Content\RadialWobble.cso</Link>
+    <Content Include="..\x64\Debug\RadialWobblePS.cso">
+      <Link>Content\RadialWobblePS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\x64\Debug\DepthAndColorFloatVS.cso">

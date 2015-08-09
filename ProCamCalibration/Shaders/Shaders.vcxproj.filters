@@ -7,9 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DepthAndProjectiveTexture.hlsl">
-      <Filter>Source Files</Filter>
-    </FxCompile>
     <FxCompile Include="DepthAndColorGS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
@@ -40,10 +37,13 @@
     <FxCompile Include="MeshWithTexturePS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
-    <FxCompile Include="RadialWobble.hlsl">
+    <FxCompile Include="DepthAndColorFloatVS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
-    <FxCompile Include="DepthAndColorFloatVS.hlsl">
+    <FxCompile Include="RadialWobblePS.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
+    <FxCompile Include="DepthAndProjectiveTextureVS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
   </ItemGroup>

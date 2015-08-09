@@ -109,7 +109,7 @@ namespace RoomAliveToolkit
     public class RadialWobble : FilterPixelShader
     {
         public RadialWobble(Device device, int imageWidth, int imageHeight)
-            : base(device, imageWidth, imageHeight, constantBufferSize, "Content/RadialWobble.cso")
+            : base(device, imageWidth, imageHeight, constantBufferSize, "Content/RadialWobblePS.cso")
         {
             var samplerStateDesc = new SamplerStateDescription()
             {

@@ -12,7 +12,7 @@ namespace RoomAliveToolkit
     {
         public ProjectiveTexturingShader(Device device)
         {
-            var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/DepthAndProjectiveTexture.cso"));
+            var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/DepthAndProjectiveTextureVS.cso"));
             vertexShader = new VertexShader(device, shaderByteCode);
             geometryShader = new GeometryShader(device, new ShaderBytecode(File.ReadAllBytes("Content/DepthAndColorGS.cso")));
             pixelShader = new PixelShader(device, new ShaderBytecode(File.ReadAllBytes("Content/DepthAndColorPS.cso")));

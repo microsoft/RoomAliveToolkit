@@ -132,9 +132,7 @@ namespace RoomAliveToolkit
                 new InputElement("SV_POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
             });
 
-
-            manipulator = new Kinect2ShaderDemo.Manipulator(videoPanel1, view, projection, viewport);
-            manipulator.ViewMatrixChanged += manipulator_ViewMatrixChanged;
+            manipulator = new Manipulator(videoPanel1);
 
             // disable most menu items when no file is loaded
             saveToolStripMenuItem.Enabled = false;
@@ -152,8 +150,6 @@ namespace RoomAliveToolkit
                 directory = Path.GetDirectoryName(path);
                 LoadEnsemble();
             }
-
-
 
             Width = Properties.Settings.Default.FormWidth;
             Height = Properties.Settings.Default.FormHeight;
@@ -176,7 +172,7 @@ namespace RoomAliveToolkit
         SamplerState colorSamplerState;
         InputLayout vertexInputLayout;
         SharpDX.Direct3D11.Buffer constantBuffer;
-        Kinect2ShaderDemo.Manipulator manipulator;
+        Manipulator manipulator;
 
 
 
@@ -301,8 +297,6 @@ namespace RoomAliveToolkit
                     colorImage.Dispose();
                     depthImage.Dispose();
                 }
-
-
 
                 //StartLive();
 
@@ -534,7 +528,7 @@ namespace RoomAliveToolkit
             {
                 lock (renderLock)
                 {
-                    manipulator.Update(); // could just grab view matrix from manipulator rather than using event
+                    view = manipulator.Update();
 
                     var deviceContext = device.ImmediateContext;
 
@@ -582,13 +576,6 @@ namespace RoomAliveToolkit
 
         Dictionary<ProjectorCameraEnsemble.Camera, CameraDeviceResource> cameraDeviceResources = new Dictionary<ProjectorCameraEnsemble.Camera, CameraDeviceResource>();
 
-        void manipulator_ViewMatrixChanged(object sender, Kinect2ShaderDemo.Manipulator.ViewMatrixChangedEventArgs e)
-        {
-            lock (renderLock)
-                view = e.view;
-        }
-
-       
         void EnsembleChanged()
         {
             lock (renderLock)
@@ -634,8 +621,10 @@ namespace RoomAliveToolkit
                 perspectiveAtOriginToolStripMenuItem.Checked = true;
                 perspectiveView = true;
                 SetViewProjectionFromCamera(ensemble.cameras[0]);
-                manipulator.SetView(view);
-                manipulator.projection = projection;
+                manipulator.View = view;
+                manipulator.Projection = projection;
+                manipulator.Viewport = viewport;
+                manipulator.OriginalView = view;
 
                 // we have a file loaded, so enable menu items
                 saveToolStripMenuItem.Enabled = true;
@@ -674,7 +663,8 @@ namespace RoomAliveToolkit
             foreach (var menuItem in projectorMenuItems)
                 menuItem.Checked = false;
             SetViewProjectionFromCamera(ensemble.cameras[0]);
-            manipulator.SetView(view);
+            manipulator.View = view;
+            manipulator.OriginalView = view;
             perspectiveView = true;
         }
 
@@ -690,7 +680,8 @@ namespace RoomAliveToolkit
 
             var projector = (ProjectorCameraEnsemble.Projector)toolStripMenuItem.Tag;
             SetViewProjectionFromProjector(projector);
-            manipulator.SetView(view);
+            manipulator.View = view;
+            manipulator.OriginalView = view;
             perspectiveView = false;
         }
 
@@ -943,7 +934,7 @@ namespace RoomAliveToolkit
 
                     // viewport
                     viewport = new Viewport(0, 0, videoPanel1.Width, videoPanel1.Height, 0f, 1f);
-                    manipulator.viewport = viewport;
+                    manipulator.Viewport = viewport;
 
                     // in the case of perspective projection, change projection to follow change in aspect
                     if (perspectiveView)

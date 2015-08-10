@@ -99,13 +99,38 @@ namespace RoomAliveToolkit
         public void DisplayName(string name)
         {
             var brush = new SolidColorBrush(renderTarget, Color4.White);
-            var layoutRect = new SharpDX.RectangleF(0, (float) bounds.Height / 2f, bounds.Width, 100f);
-            
+            var layoutRect = new SharpDX.RectangleF(0, 0, bounds.Width, bounds.Height);
+
             renderTarget.BeginDraw();
             renderTarget.Clear(Color4.Black);
             renderTarget.DrawRectangle(new SharpDX.RectangleF(0, 0, bounds.Width, bounds.Height), brush, 10f);
-
             renderTarget.DrawText(name, textFormat, layoutRect, solidColorBrush);
+
+            //int nx = 4;
+            //int ny = 4;
+            //for (int i = 0; i < nx - 1; i++)
+            //    for (int j = 0; j < ny - 1; j++)
+            //    {
+            //        float x = (float)bounds.Width / (float)nx * (i + 1);
+            //        float y = (float)bounds.Height / (float)ny * (j + 1);
+
+            //        const int w = 10;
+            //        renderTarget.DrawLine(new Vector2(x - w, y), new Vector2(x + w, y), brush, 1);
+            //        renderTarget.DrawLine(new Vector2(x, y - w), new Vector2(x, y + w), brush, 1);
+            //    }
+
+            int nx = 4;
+            int ny = 4;
+            for (int i = 0; i < nx - 1; i++)
+            {
+                float x = (float)bounds.Width / (float)nx * (i + 1);
+                renderTarget.DrawLine(new Vector2(x, 0), new Vector2(x, bounds.Height), brush, 1);
+            }
+            for (int i = 0; i < ny - 1; i++)
+            {
+                float y = (float)bounds.Height / (float)ny * (i + 1);
+                renderTarget.DrawLine(new Vector2(0, y), new Vector2(bounds.Width, y), brush, 1);
+            }
             renderTarget.EndDraw();
 
             brush.Dispose();

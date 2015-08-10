@@ -99,7 +99,7 @@ To calibrate a multiple camera/multiple projector setup, keep the following in m
 
 [video of 3 camera/3 projector calibration](https://www.youtube.com/watch?v=9Ifnt3xM1J0)
 
-The resulting calibration set can be downloaded [here](http://research.microsoft.com/~awilson/RoomAliveToolkit/calibration3x3.zip). Try opening this in CalibrateEnsemble.exe.
+The resulting calibration set can be downloaded [here](http://research.microsoft.com/~awilson/RoomAliveToolkit/calibration3x3 v2.zip). Try opening this in CalibrateEnsemble.exe.
 
 [video of projection mapping sample, showing view dependent rendering of 3D object] (https://www.youtube.com/watch?v=9A18AxfC2tM)
 

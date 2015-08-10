@@ -618,13 +618,7 @@ namespace RoomAliveToolkit
                     projectorMenuItems.Add(toolStripMenuItem);
                 }
 
-                perspectiveAtOriginToolStripMenuItem.Checked = true;
-                perspectiveView = true;
-                SetViewProjectionFromCamera(ensemble.cameras[0]);
-                manipulator.View = view;
-                manipulator.Projection = projection;
-                manipulator.Viewport = viewport;
-                manipulator.OriginalView = view;
+                SetDefaultView();
 
                 // we have a file loaded, so enable menu items
                 saveToolStripMenuItem.Enabled = true;
@@ -655,17 +649,13 @@ namespace RoomAliveToolkit
             cameraDeviceResources[camera].renderEnabled = toolStripMenuItem.Checked;
         }
 
-        bool perspectiveView = true;
+        bool perspectiveView;
 
         private void perspectiveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            perspectiveAtOriginToolStripMenuItem.Checked = true;
             foreach (var menuItem in projectorMenuItems)
                 menuItem.Checked = false;
-            SetViewProjectionFromCamera(ensemble.cameras[0]);
-            manipulator.View = view;
-            manipulator.OriginalView = view;
-            perspectiveView = true;
+            SetDefaultView();
         }
 
         void viewMenuItem_Click(object sender, EventArgs e)
@@ -939,9 +929,10 @@ namespace RoomAliveToolkit
                     // in the case of perspective projection, change projection to follow change in aspect
                     if (perspectiveView)
                     {
-                        float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-                        projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
-                        projection.Transpose();
+                        //float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
+                        //projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                        //projection.Transpose();
+                        SetDefaultView();
                     }
                 }
         }
@@ -1177,7 +1168,7 @@ namespace RoomAliveToolkit
 
         void SetViewProjectionFromCamera(ProjectorCameraEnsemble.Camera camera)
         {
-            if (camera.pose == null)
+            if ((camera.pose == null) || (camera.calibration.colorCameraMatrix == null))
                 Console.WriteLine("Camera pose not set.");
             else
             {
@@ -1188,10 +1179,36 @@ namespace RoomAliveToolkit
                 view.Invert();
                 view.Transpose();
 
-                float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
-                projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+                var cameraMatrix = camera.calibration.colorCameraMatrix;
+                float fx = (float)cameraMatrix[0, 0];
+                float fy = (float)cameraMatrix[1, 1];
+                float cx = (float)cameraMatrix[0, 2];
+                float cy = (float)cameraMatrix[1, 2];
+
+                float near = 0.1f;
+                float far = 100.0f;
+
+                float w = Kinect2Calibration.colorImageWidth;
+                float h = Kinect2Calibration.colorImageHeight;
+
+                projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
                 projection.Transpose();
             }
+        }
+
+        void SetDefaultView()
+        {
+            view = SharpDX.Matrix.Identity;
+            float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
+            projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
+            projection.Transpose();
+
+            manipulator.View = view;
+            manipulator.Projection = projection;
+            manipulator.Viewport = viewport;
+            manipulator.OriginalView = view;
+            perspectiveAtOriginToolStripMenuItem.Checked = true;
+            perspectiveView = true;
         }
 
     }

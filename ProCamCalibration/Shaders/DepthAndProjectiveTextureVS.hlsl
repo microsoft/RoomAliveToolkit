@@ -43,7 +43,6 @@ VSOutput main(VSInput input)
 
 	// projector's view volume
 	float4 pos = mul(depthCamera, projectorWorldViewProjection);
-	pos /= pos.w; // we need to do this because geometry shader comapares distances among points to reject triangles
 		
 	// user view texture coords
 	// converts to texture coords

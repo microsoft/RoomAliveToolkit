@@ -23,7 +23,6 @@ cbuffer cbRarelyChanges : register(b0)
 	matrix viewProjection;
 }
 
-
 float2 Project(float4 x)
 {
 	float2 xp = x.xy / x.z;
@@ -57,7 +56,6 @@ VSOutput main( VSInput input )
 
 	// view volume
 	float4 pos = mul(depthCamera, viewProjection);
-	pos /= pos.w;
 
 	output.pos = pos;
 	output.tex = tex;

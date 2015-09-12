@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Shaders\Shaders.vcxproj", "{EE25A666-F343-402A-BCE8-756877510F5D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectorServer", "ProjectorServer\ProjectorServer.csproj", "{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B29916C5-A0DD-464F-8104-E6DA0FD22C0B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalibrateEnsemble", "CalibrateEnsemble\CalibrateEnsemble.csproj", "{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1} = {D8A7FB2F-F8FD-4489-AA7B-82B57B12D6F1}
 		{EE25A666-F343-402A-BCE8-756877510F5D} = {EE25A666-F343-402A-BCE8-756877510F5D}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Shaders\Shaders.vcxproj", "{EE25A666-F343-402A-BCE8-756877510F5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectorServer", "ProjectorServer\ProjectorServer.csproj", "{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B29916C5-A0DD-464F-8104-E6DA0FD22C0B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinectServer", "KinectServer\KinectServer.csproj", "{706459E3-7DFE-4894-BCCF-6F82D0D14050}"
 	ProjectSection(ProjectDependencies) = postProject

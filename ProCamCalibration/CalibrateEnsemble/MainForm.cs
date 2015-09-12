@@ -50,7 +50,9 @@ namespace RoomAliveToolkit
                 SampleDescription = new SampleDescription(1, 0),
             };
 
-            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, swapChainDesc, out device, out swapChain);
+            // When using DeviceCreationFlags.Debug on Windows 10, ensure that "Graphics Tools" are installed via Settings/System/Apps & features/Manage optional features.
+            // Also, when debugging in VS, "Enable native code debugging" must be selected on the project.
+            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.None, swapChainDesc, out device, out swapChain);
 
             // render target
             renderTarget = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);

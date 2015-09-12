@@ -29,7 +29,10 @@ namespace RoomAliveToolkit
             // create d3d device
             var factory = new Factory1();
             var adapter = factory.Adapters[0];
-            device = new SharpDX.Direct3D11.Device(adapter, DeviceCreationFlags.Debug);
+
+            // When using DeviceCreationFlags.Debug on Windows 10, ensure that "Graphics Tools" are installed via Settings/System/Apps & features/Manage optional features.
+            // Also, when debugging in VS, "Enable native code debugging" must be selected on the project.
+            device = new SharpDX.Direct3D11.Device(adapter, DeviceCreationFlags.None);
 
             // shaders
             depthAndColorShader = new DepthAndColorShader(device);

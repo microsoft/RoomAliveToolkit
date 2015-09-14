@@ -112,54 +112,37 @@ namespace RoomAliveToolkit
                 A[ii, 11] = -x;
             }
 
+            // Pcolumn is the eigenvector of ATA with the smallest eignvalue
             var Pcolumn = new Matrix(12, 1);
             {
-                var U = new Matrix(2 * n, 2 * n); // full SVD, alas, supports small number of points
+                var ATA = new Matrix(12, 12);
+                ATA.MultATA(A, A);
+
                 var V = new Matrix(12, 12);
                 var ww = new Matrix(12, 1);
+                ATA.Eig(V, ww);
 
-                A.SVD(U, ww, V);
-
-                // find smallest singular value
-                int min = 0;
-                ww.Minimum(ref min);
-
-                // Pcolumn is last column of V
-                Pcolumn.CopyCol(V, min);
+                Pcolumn.CopyCol(V, 0);
             }
 
             // reshape into 3x4 projection matrix
             var P = new Matrix(3, 4);
             P.Reshape(Pcolumn);
 
-            // x = P * X
-            // P = K [ R | t ]
-            // inv(K) P = [ R | t ]
-
-            //var Kinv = new Matrix(3, 3);
-            //Kinv.Inverse(cameraMatrix);
-            //var Rt = new Matrix(3, 4);
-            //Rt.Mult(Kinv, P);
-
-            var Rt = new Matrix(3, 4);
-            Rt.Copy(P); // P does not contain camera matrix (by earlier undistort)
-
             R = new Matrix(3, 3);
             t = new Matrix(3, 1);
 
             for (int ii = 0; ii < 3; ii++)
             {
-                t[ii] = Rt[ii, 3];
+                t[ii] = P[ii, 3];
                 for (int jj = 0; jj < 3; jj++)
-                    R[ii, jj] = Rt[ii, jj];
+                    R[ii, jj] = P[ii, jj];
             }
-
-            //R.Copy(0, 0, Rt);
-            //t.CopyCol(Rt, 3);
 
             if (R.Det3x3() < 0)
             {
-                R.Scale(-1); t.Scale(-1);
+                R.Scale(-1);
+                t.Scale(-1);
             }
 
             // orthogonalize R
@@ -176,8 +159,6 @@ namespace RoomAliveToolkit
                 double s = ww.Sum() / 3.0;
                 t.Scale(1.0 / s);
             }
-
-            // compute error?
         }
 
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using SharpDX;
+using System.Globalization;
 
 namespace RoomAliveToolkit
 {
@@ -68,22 +69,22 @@ namespace RoomAliveToolkit
                 }
                 else if (command == "v") // position
                 {
-                    float x = float.Parse(terms[1]);
-                    float y = float.Parse(terms[2]);
-                    float z = float.Parse(terms[3]);
+                    float x = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    float y = float.Parse(terms[2], CultureInfo.InvariantCulture);
+                    float z = float.Parse(terms[3], CultureInfo.InvariantCulture);
                     positions.Add(new Vector4(x, y, z, 1));
                 }
                 else if (command == "vt") // texture coord
                 {
-                    float u = float.Parse(terms[1]);
-                    float v = float.Parse(terms[2]);
+                    float u = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    float v = float.Parse(terms[2], CultureInfo.InvariantCulture);
                     textureCoords.Add(new Vector2(u, v));
                 }
                 else if (command == "vn") // normal
                 {
-                    float x = float.Parse(terms[1]);
-                    float y = float.Parse(terms[2]);
-                    float z = float.Parse(terms[3]);
+                    float x = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    float y = float.Parse(terms[2], CultureInfo.InvariantCulture);
+                    float z = float.Parse(terms[3], CultureInfo.InvariantCulture);
                     normals.Add(new Vector3(x, y, z));
                 }
                 else if (command == "f") // face
@@ -161,21 +162,21 @@ namespace RoomAliveToolkit
                 }
                 else if (command == "Ka") // ambient color
                 {
-                    material.ambientColor.X = float.Parse(terms[1]);
-                    material.ambientColor.Y = float.Parse(terms[2]);
-                    material.ambientColor.Z = float.Parse(terms[3]);
+                    material.ambientColor.X = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    material.ambientColor.Y = float.Parse(terms[2], CultureInfo.InvariantCulture);
+                    material.ambientColor.Z = float.Parse(terms[3], CultureInfo.InvariantCulture);
                 }
                 else if (command == "Kd") // diffuse color
                 {
-                    material.diffuseColor.X = float.Parse(terms[1]);
-                    material.diffuseColor.Y = float.Parse(terms[2]);
-                    material.diffuseColor.Z = float.Parse(terms[3]);
+                    material.diffuseColor.X = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    material.diffuseColor.Y = float.Parse(terms[2], CultureInfo.InvariantCulture);
+                    material.diffuseColor.Z = float.Parse(terms[3], CultureInfo.InvariantCulture);
                 }
                 else if (command == "Ks") // specular color
                 {
-                    material.specularColor.X = float.Parse(terms[1]);
-                    material.specularColor.Y = float.Parse(terms[2]);
-                    material.specularColor.Z = float.Parse(terms[3]);
+                    material.specularColor.X = float.Parse(terms[1], CultureInfo.InvariantCulture);
+                    material.specularColor.Y = float.Parse(terms[2], CultureInfo.InvariantCulture);
+                    material.specularColor.Z = float.Parse(terms[3], CultureInfo.InvariantCulture);
                 }
                 else if ((command == "d") || (command == "Tr"))
                 {
@@ -183,7 +184,7 @@ namespace RoomAliveToolkit
                 }
                 else if (command == "Ns")
                 {
-                    material.shininess = (int)float.Parse(terms[1]);
+                    material.shininess = (int)float.Parse(terms[1], CultureInfo.InvariantCulture);
                 }
                 else if (command == "illum")
                 {

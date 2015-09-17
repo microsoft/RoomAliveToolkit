@@ -6,6 +6,7 @@ using System.ServiceModel;
 using System.Text;
 using System.Xml;
 using System.Runtime.Serialization;
+using System.Globalization;
 
 namespace RoomAliveToolkit
 {
@@ -1422,17 +1423,22 @@ namespace RoomAliveToolkit
             }
         }
 
+        public class CultureInvariantStreamWriter : StreamWriter
+        {
+            public CultureInvariantStreamWriter(string path) : base(path) { }
+            public CultureInvariantStreamWriter(string path, bool append, Encoding encoding) : base(path, append, encoding) { }
+            public override IFormatProvider FormatProvider
+            {
+                get
+                {
+                    return CultureInfo.InvariantCulture;
+                }
+            }
+        }
+
+
         public void SaveToOBJ(string directory, string objPath)
         {
-            // force decimal point so standard programs like MeshLab can read this
-            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
-            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
-            {
-                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
-                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
-            }
-
             var objFilename = Path.GetFileNameWithoutExtension(objPath);
             var objDirectory = Path.GetDirectoryName(objPath);
 
@@ -1450,8 +1456,8 @@ namespace RoomAliveToolkit
                 new System.Drawing.Point(0, 1),
             };
 
-            var streamWriter = new StreamWriter(objDirectory + "/" + objFilename + ".obj");
-            var mtlFileWriter = new StreamWriter(objDirectory + "/" + objFilename + ".mtl");
+            var streamWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".obj");
+            var mtlFileWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".mtl");
             streamWriter.WriteLine("mtllib " + objFilename + ".mtl");
             uint nextVertexIndex = 1;
             var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
@@ -1637,16 +1643,7 @@ namespace RoomAliveToolkit
 
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
-            // force decimal point so standard programs like MeshLab can read this
-            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
-            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
-            {
-                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
-                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
-            }
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename, false, Encoding.ASCII))
+            using (var file = new CultureInvariantStreamWriter(filename, false, Encoding.ASCII))
             {
                 // Write Header
                 file.WriteLine("ply");

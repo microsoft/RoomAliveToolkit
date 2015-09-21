@@ -153,7 +153,7 @@ namespace RoomAliveToolkit
                 LoadEnsemble();
             }
 
-            CameraMath.TestPlanarDLT(ensemble.cameras[0].calibration.depthCameraMatrix, ensemble.cameras[0].calibration.depthLensDistortion);
+            CameraMath.TestPlanarDLT();
 
             Width = Properties.Settings.Default.FormWidth;
             Height = Properties.Settings.Default.FormHeight;

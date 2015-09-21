@@ -161,14 +161,26 @@ namespace RoomAliveToolkit
             }
         }
 
-        public static void TestPlanarDLT(Matrix cameraMatrix, Matrix distCoeffs)
+        public static void TestPlanarDLT()
         {
+            var cameraMatrix = Matrix.Identity(3, 3);
+            cameraMatrix[0, 0] = 300;
+            cameraMatrix[1, 1] = 300;
+            cameraMatrix[0, 2] = 250;
+            cameraMatrix[1, 2] = 220;
+
+            var distCoeffs = new Matrix(5, 1);
+            distCoeffs[0] = 0.05;
+            distCoeffs[1] = -0.1;
+
+
+
             // generate a bunch of points in a plane
             // rotate/translate
             // project
 
             var R = new Matrix(3, 3);
-            R.RotEuler2Matrix(0.0, 0.2, 0.6);
+            R.RotEuler2Matrix(0.3, -0.2, 0.6);
 
             var t = new Matrix(3, 1);
             t[0] = 0.2;
@@ -179,8 +191,8 @@ namespace RoomAliveToolkit
             var worldTransformedPoints = new List<Matrix>();
             var imagePoints = new List<System.Drawing.PointF>();
 
-            for (float y = -1f; y <= 1.0f; y += 0.1f)
-                for (float x = -1f; x <= 1.0f; x += 0.1f)
+            for (float y = -1f; y <= 1.0f; y += 0.2f)
+                for (float x = -1f; x <= 1.0f; x += 0.2f)
                 {
                     var world = new Matrix(3, 1);
                     world[0] = x;
@@ -203,53 +215,65 @@ namespace RoomAliveToolkit
                     imagePoints.Add(image);
                 }
 
-            Console.WriteLine(R);
-            Console.WriteLine(t);
+            int n = worldTransformedPoints.Count;
+
+            //Console.Write("\nfc = [300 300]'; cc = [250 220]'; kc = [0.05 -0.1 0 0 0]'; alpha = 0;\n");
+            //Console.WriteLine("x = [");
+            //for (int i = 0; i < n; i++)
+            //{
+            //    var x = imagePoints[i];
+            //    Console.WriteLine("{0} {1}", x.X, x.Y);
+            //}
+            //Console.WriteLine("]';");
+            //Console.WriteLine("X = [");
+            //for (int i = 0; i < n; i++)
+            //{
+            //    var X = worldPoints[i];
+            //    Console.WriteLine("{0} {1} {2}", X[0], X[1], X[2]);
+            //}
+            //Console.WriteLine("]';\n\n");
+
+
+
+            Console.WriteLine("R\n" + R);
+            Console.WriteLine("t\n" + t);
 
 
             var planeR = new Matrix(3, 1);
             var planeT = new Matrix(3, 1);
+            PlaneFit(worldPoints, out planeR, out planeT);
 
-            PlaneFit(worldTransformedPoints, out planeR, out planeT);
-
-            Console.WriteLine("planeR\n" + planeR);
-            Console.WriteLine("planeT\n" + planeT);
-
+            //Console.WriteLine("planeR\n" + planeR);
+            //Console.WriteLine("planeT\n" + planeT);
 
             // transform world points to plane
-            int n = worldTransformedPoints.Count;
             var worldPlanePoints = new List<Matrix>();
             for (int i = 0; i < n; i++)
             {
                 var planePoint = new Matrix(3, 1);
-                planePoint.Mult(planeR, worldTransformedPoints[i]);
+                planePoint.Mult(planeR, worldPoints[i]);
                 planePoint.Add(planeT);
                 worldPlanePoints.Add(planePoint);
-
-                //Console.WriteLine(planePoint);
             }
-
 
             var Rest = new Matrix(3, 3);
             var test = new Matrix(3, 1);
 
-            //PlanarDLT(cameraMatrix, distCoeffs, worldPoints, imagePoints, out Rest, out test);
             PlanarDLT(cameraMatrix, distCoeffs, worldPlanePoints, imagePoints, out Rest, out test);
 
-            Console.WriteLine(Rest);
-            Console.WriteLine(test);
+            //Console.WriteLine("Rest\n" + Rest);
+            //Console.WriteLine("test\n" + test);
 
-            var tworld = new Matrix(3, 1);
             var Rworld = new Matrix(3, 3);
+            var tworld = new Matrix(3, 1);
 
             tworld.Mult(Rest, planeT);
             tworld.Add(test);
 
-
             Rworld.Mult(Rest, planeR);
 
-            Console.WriteLine(Rworld);
-            Console.WriteLine(tworld);
+            Console.WriteLine("Rworld\n" + Rworld);
+            Console.WriteLine("tworld\n" + tworld);
 
 
         }
@@ -319,7 +343,7 @@ namespace RoomAliveToolkit
             var d = new Matrix(3, 1);
             A.Eig(V, d); // eigenvalues in ascending order
 
-            // TODO: rearrange to descending order so that z = 0
+            // arrange in descending order so that z = 0
             var V2 = new Matrix(3, 3);
             for (int i = 0; i < 3; i++)
             {
@@ -344,37 +368,69 @@ namespace RoomAliveToolkit
 
         public static Matrix Homography(List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints)
         {
-            // TODO: normalize values
-
             int n = worldPoints.Count;
+
+            // normalize image coordinates
+            var mu = new Matrix(2, 1);
+            for (int i = 0; i < n; i++)
+            {
+                mu[0] += imagePoints[i].X;
+                mu[1] += imagePoints[i].Y;
+            }
+            mu.Scale(1.0 / n);
+            var muAbs = new Matrix(2, 1);
+            for (int i = 0; i < n; i++)
+            {
+                muAbs[0] += Math.Abs(imagePoints[i].X - mu[0]);
+                muAbs[1] += Math.Abs(imagePoints[i].Y - mu[1]);
+            }
+            muAbs.Scale(1.0 / n);
+
+            var Hnorm = Matrix.Identity(3, 3);
+            Hnorm[0, 0] = 1 / muAbs[0];
+            Hnorm[1, 1] = 1 / muAbs[1];
+            Hnorm[0, 2] = -mu[0] / muAbs[0];
+            Hnorm[1, 2] = -mu[1] / muAbs[1];
+
+            var invHnorm = Matrix.Identity(3, 3);
+            invHnorm[0, 0] = muAbs[0];
+            invHnorm[1, 1] = muAbs[1];
+            invHnorm[0, 2] = mu[0];
+            invHnorm[1, 2] = mu[1];
+
 
             var A = Matrix.Zero(2 * n, 9);
             for (int i = 0; i < n; i++)
             {
                 var X = worldPoints[i];
-
                 var imagePoint = imagePoints[i];
-                double x = imagePoint.X;
-                double y = imagePoint.Y;
 
+                var x = new Matrix(3, 1);
+                x[0] = imagePoint.X;
+                x[1] = imagePoint.Y;
+                x[2] = 1;
+
+                var xn = new Matrix(3, 1);
+                xn.Mult(Hnorm, x);
+ 
                 // Zhang's formulation; Hartley's is similar
                 int ii = 2 * i;
                 A[ii, 0] = X[0];
                 A[ii, 1] = X[1];
                 A[ii, 2] = 1;
 
-                A[ii, 6] = -x * X[0];
-                A[ii, 7] = -x * X[1];
-                A[ii, 8] = -x;
+                A[ii, 6] = -xn[0] * X[0];
+                A[ii, 7] = -xn[0] * X[1];
+                A[ii, 8] = -xn[0];
 
                 ii++; // next row
                 A[ii, 3] = X[0];
                 A[ii, 4] = X[1];
                 A[ii, 5] = 1;
 
-                A[ii, 6] = -y * X[0];
-                A[ii, 7] = -y * X[1];
-                A[ii, 8] = -y;
+                A[ii, 6] = -xn[1] * X[0];
+                A[ii, 7] = -xn[1] * X[1];
+                A[ii, 8] = -xn[1];
             }
 
             // h is the eigenvector of ATA with the smallest eignvalue
@@ -390,64 +446,15 @@ namespace RoomAliveToolkit
                 h.CopyCol(V, 0);
             }
 
+            var Hn = new Matrix(3, 3);
+            Hn.Reshape(h);
+
             var H = new Matrix(3, 3);
-            H.Reshape(h);
+            H.Mult(invHnorm, Hn);
+
             return H;
         }
 
 
     }
 }
-
-
-//Console.WriteLine(lambda);
-//Console.WriteLine(R.Det3x3());
-
-//for (int i = 0; i < n; i++)
-//{
-//    var worldPoint = worldPoints[i];
-//    var imagePoint = imagePoints[i];
-
-
-
-//    var worldTransformed = new Matrix(3, 1);
-//    worldTransformed.Mult(R, worldPoint);
-//    worldTransformed.Add(t);
-
-
-//    double u, v;
-//    Project(cameraMatrix, distCoeffs, worldTransformed[0], worldTransformed[1], worldTransformed[2], out u, out v);
-
-//    var image = new System.Drawing.PointF();
-//    image.X = (float)u;
-//    image.Y = (float)v;
-
-
-//    Console.WriteLine(imagePoint.X + "\t" + imagePoint.Y + "\t" + u + "\t" + v);
-
-
-//}
-
-
-//// not sure if this is necessary:
-//if (R.Det3x3() < 0)
-//{
-//    R.Scale(-1);
-//    t.Scale(-1);
-//}
-
-//// not sure if this is necessary:
-//// orthogonalize R
-//{
-//    var U = new Matrix(3, 3);
-//    var Vt = new Matrix(3, 3);
-//    var V = new Matrix(3, 3);
-//    var ww = new Matrix(3, 1);
-
-//    R.SVD(U, ww, V);
-//    Vt.Transpose(V);
-
-//    R.Mult(U, Vt);
-//    double s = ww.Sum() / 3.0;
-//    t.Scale(1.0 / s);
-//}

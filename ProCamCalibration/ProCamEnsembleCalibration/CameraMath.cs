@@ -173,11 +173,8 @@ namespace RoomAliveToolkit
             distCoeffs[0] = 0.05;
             distCoeffs[1] = -0.1;
 
-
-
             // generate a bunch of points in a plane
-            // rotate/translate
-            // project
+            // project under some other camera (view)
 
             var R = new Matrix(3, 3);
             R.RotEuler2Matrix(0.3, -0.2, 0.6);
@@ -187,23 +184,39 @@ namespace RoomAliveToolkit
             t[1] = 0.3;
             t[2] = 2;
 
+            var modelR = new Matrix(3, 3);
+            modelR.RotEuler2Matrix(-0.6, 0.2, 0.3);
+
+            var modelT = new Matrix(3, 1);
+            modelT[0] = -0.1;
+            modelT[1] = 1.0;
+            modelT[2] = 1.5;
+
             var worldPoints = new List<Matrix>();
             var worldTransformedPoints = new List<Matrix>();
             var imagePoints = new List<System.Drawing.PointF>();
+            var zero3 = Matrix.Zero(3, 1);
 
             for (float y = -1f; y <= 1.0f; y += 0.2f)
                 for (float x = -1f; x <= 1.0f; x += 0.2f)
                 {
+                    var model = new Matrix(3, 1);
+                    model[0] = x;
+                    model[1] = y;
+                    model[2] = 0;
+
+                    var noise = Normal(zero3, 0.1 * 0.1);
+
                     var world = new Matrix(3, 1);
-                    world[0] = x;
-                    world[1] = y;
-                    world[2] = 0;
+                    world.Mult(modelR, model);
+                    world.Add(modelT);
+                    world.Add(noise);
                     worldPoints.Add(world);
 
+                    // under some camera:
                     var worldTransformed = new Matrix(3, 1);
                     worldTransformed.Mult(R, world);
                     worldTransformed.Add(t);
-
                     worldTransformedPoints.Add(worldTransformed);
 
                     double u, v;
@@ -456,5 +469,53 @@ namespace RoomAliveToolkit
         }
 
 
+
+        public static Matrix Normal(int m, int n)
+        {
+            var A = new Matrix(m, n);
+            for (int i = 0; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    A[i,j] = NextNormal(0, 1);
+            return A;
+        }
+
+        public static Matrix Normal(Matrix mu, double sigma)
+        {
+            int m = mu.Rows;
+            int n = mu.Cols;
+
+            var A = new Matrix(m, n);
+            for (int i = 0; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    A[i, j] = NextNormal(mu[i,j], sigma);
+            return A;
+        }
+
+        static double z0, z1;
+        static bool generate = false;
+        static Random random = new Random();
+
+        public static double NextNormal(double mu, double sigma)
+        {
+            const double epsilon = double.MinValue;
+            const double tau = 2.0 * Math.PI;
+
+            generate = !generate;
+            if (!generate)
+                return z1 * sigma + mu;
+
+            double u1, u2;
+            do
+            {
+                u1 = random.NextDouble();
+                u2 = random.NextDouble();
+            }
+            while (u1 <= epsilon);
+
+            z0 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(tau * u2);
+            z1 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(tau * u2);
+            return z0 * sigma + mu;
+
+        }
     }
 }

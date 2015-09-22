@@ -5,7 +5,7 @@ namespace RoomAliveToolkit
 {
     public class CameraMath
     {
-        public static void Project(RoomAliveToolkit.Matrix cameraMatrix, RoomAliveToolkit.Matrix distCoeffs, double x, double y, double z, out double u, out double v)
+        public static void Project(Matrix cameraMatrix, Matrix distCoeffs, double x, double y, double z, out double u, out double v)
         {
             double xp = x / z;
             double yp = y / z;
@@ -25,7 +25,7 @@ namespace RoomAliveToolkit
             v = fy * ypp + cy;
         }
 
-        public static void Undistort(RoomAliveToolkit.Matrix cameraMatrix, RoomAliveToolkit.Matrix distCoeffs, double xin, double yin, out double xout, out double yout)
+        public static void Undistort(Matrix cameraMatrix, Matrix distCoeffs, double xin, double yin, out double xout, out double yout)
         {
             float fx = (float)cameraMatrix[0, 0];
             float fy = (float)cameraMatrix[1, 1];
@@ -161,6 +161,75 @@ namespace RoomAliveToolkit
             }
         }
 
+        public static void PlanarDLT(Matrix cameraMatrix, Matrix distCoeffs, List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints, Matrix Rplane, Matrix Tplane, out Matrix R, out Matrix t)
+        {
+            // transform world points to plane
+            int n = worldPoints.Count;
+            var worldPlanePoints = new List<Matrix>();
+            for (int i = 0; i < n; i++)
+            {
+                var planePoint = new Matrix(3, 1);
+                planePoint.Mult(Rplane, worldPoints[i]);
+                planePoint.Add(Tplane);
+                worldPlanePoints.Add(planePoint);
+            }
+
+            var Rdlt = new Matrix(3, 3);
+            var Tdlt = new Matrix(3, 1);
+
+            PlanarDLT(cameraMatrix, distCoeffs, worldPlanePoints, imagePoints, out Rdlt, out Tdlt);
+
+            R = new Matrix(3, 3);
+            t = new Matrix(3, 1);
+
+            t.Mult(Rdlt, Tplane);
+            t.Add(Tdlt);
+
+            R.Mult(Rdlt, Rplane);
+        }
+
+        public static void PlanarDLT(Matrix cameraMatrix, Matrix distCoeffs, List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints, out Matrix R, out Matrix t)
+        {
+            int n = worldPoints.Count;
+            var undistortedImagePoints = new List<System.Drawing.PointF>();
+            for (int i = 0; i < n; i++)
+            {
+                var imagePoint = imagePoints[i];
+                double x, y;
+                Undistort(cameraMatrix, distCoeffs, imagePoint.X, imagePoint.Y, out x, out y);
+                var undistorted = new System.Drawing.PointF();
+                undistorted.X = (float)x;
+                undistorted.Y = (float)y;
+                undistortedImagePoints.Add(undistorted);
+            }
+
+            var H = Homography(worldPoints, undistortedImagePoints);
+            H.Scale(H[2, 2]);
+
+            var r1 = new Matrix(3, 1);
+            r1.CopyCol(H, 0);
+
+            var r2 = new Matrix(3, 1);
+            r2.CopyCol(H, 1);
+
+            t = new Matrix(3, 1);
+            t.CopyCol(H, 2);
+            t.Scale(1 / ((r1.Norm() + r2.Norm()) / 2.0));
+            r1.Scale(1 / r1.Norm());
+            r2.Scale(1 / r2.Norm());
+
+            var r3 = new Matrix(3, 1);
+            r3.Cross(r1, r2);
+
+            R = new Matrix(3, 3);
+            for (int i = 0; i < 3; i++)
+            {
+                R[i, 0] = r1[i];
+                R[i, 1] = r2[i];
+                R[i, 2] = r3[i];
+            }
+        }
+
         public static void TestPlanarDLT()
         {
             var cameraMatrix = Matrix.Identity(3, 3);
@@ -205,7 +274,7 @@ namespace RoomAliveToolkit
                     model[1] = y;
                     model[2] = 0;
 
-                    var noise = Normal(zero3, 0.1 * 0.1);
+                    var noise = GaussianSample(zero3, 0.1 * 0.1);
 
                     var world = new Matrix(3, 1);
                     world.Mult(modelR, model);
@@ -228,109 +297,21 @@ namespace RoomAliveToolkit
                     imagePoints.Add(image);
                 }
 
-            int n = worldTransformedPoints.Count;
-
-            //Console.Write("\nfc = [300 300]'; cc = [250 220]'; kc = [0.05 -0.1 0 0 0]'; alpha = 0;\n");
-            //Console.WriteLine("x = [");
-            //for (int i = 0; i < n; i++)
-            //{
-            //    var x = imagePoints[i];
-            //    Console.WriteLine("{0} {1}", x.X, x.Y);
-            //}
-            //Console.WriteLine("]';");
-            //Console.WriteLine("X = [");
-            //for (int i = 0; i < n; i++)
-            //{
-            //    var X = worldPoints[i];
-            //    Console.WriteLine("{0} {1} {2}", X[0], X[1], X[2]);
-            //}
-            //Console.WriteLine("]';\n\n");
-
-
-
             Console.WriteLine("R\n" + R);
             Console.WriteLine("t\n" + t);
 
+            var Rplane = new Matrix(3, 1);
+            var Tplane = new Matrix(3, 1);
 
-            var planeR = new Matrix(3, 1);
-            var planeT = new Matrix(3, 1);
-            PlaneFit(worldPoints, out planeR, out planeT);
-
-            //Console.WriteLine("planeR\n" + planeR);
-            //Console.WriteLine("planeT\n" + planeT);
-
-            // transform world points to plane
-            var worldPlanePoints = new List<Matrix>();
-            for (int i = 0; i < n; i++)
-            {
-                var planePoint = new Matrix(3, 1);
-                planePoint.Mult(planeR, worldPoints[i]);
-                planePoint.Add(planeT);
-                worldPlanePoints.Add(planePoint);
-            }
+            PlaneFit(worldPoints, out Rplane, out Tplane);
 
             var Rest = new Matrix(3, 3);
             var test = new Matrix(3, 1);
 
-            PlanarDLT(cameraMatrix, distCoeffs, worldPlanePoints, imagePoints, out Rest, out test);
+            PlanarDLT(cameraMatrix, distCoeffs, worldPoints, imagePoints, Rplane, Tplane, out Rest, out test);
 
-            //Console.WriteLine("Rest\n" + Rest);
-            //Console.WriteLine("test\n" + test);
-
-            var Rworld = new Matrix(3, 3);
-            var tworld = new Matrix(3, 1);
-
-            tworld.Mult(Rest, planeT);
-            tworld.Add(test);
-
-            Rworld.Mult(Rest, planeR);
-
-            Console.WriteLine("Rworld\n" + Rworld);
-            Console.WriteLine("tworld\n" + tworld);
-
-
-        }
-
-        public static void PlanarDLT(Matrix cameraMatrix, Matrix distCoeffs, List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints, out Matrix R, out Matrix t)
-        {
-            int n = worldPoints.Count;
-            var undistortedImagePoints = new List<System.Drawing.PointF>();
-            for (int i = 0; i < n; i++)
-            {
-                var imagePoint = imagePoints[i];
-                double x, y;
-                Undistort(cameraMatrix, distCoeffs, imagePoint.X, imagePoint.Y, out x, out y);
-                var undistorted = new System.Drawing.PointF();
-                undistorted.X = (float)x;
-                undistorted.Y = (float)y;
-                undistortedImagePoints.Add(undistorted);
-            }
-
-            var H = Homography(worldPoints, undistortedImagePoints);
-            H.Scale(H[2, 2]);
-
-            var r1 = new Matrix(3, 1);
-            r1.CopyCol(H, 0);
-
-            var r2 = new Matrix(3, 1);
-            r2.CopyCol(H, 1);
-
-            t = new Matrix(3, 1);
-            t.CopyCol(H, 2);
-            t.Scale(1 / ((r1.Norm() + r2.Norm()) / 2.0));
-            r1.Scale(1 / r1.Norm());
-            r2.Scale(1 / r2.Norm());
-
-            var r3 = new Matrix(3, 1);
-            r3.Cross(r1, r2);
-
-            R = new Matrix(3, 3);
-            for (int i = 0; i < 3; i++)
-            {
-                R[i, 0] = r1[i];
-                R[i, 1] = r2[i];
-                R[i, 2] = r3[i];
-            }
+            Console.WriteLine("Rest\n" + Rest);
+            Console.WriteLine("test\n" + test);
         }
 
         static public double PlaneFit(IList<Matrix> X, out Matrix R, out Matrix t)
@@ -468,18 +449,16 @@ namespace RoomAliveToolkit
             return H;
         }
 
-
-
-        public static Matrix Normal(int m, int n)
+        public static Matrix GaussianSample(int m, int n)
         {
             var A = new Matrix(m, n);
             for (int i = 0; i < m; i++)
                 for (int j = 0; j < n; j++)
-                    A[i,j] = NextNormal(0, 1);
+                    A[i,j] = NextGaussianSample(0, 1);
             return A;
         }
 
-        public static Matrix Normal(Matrix mu, double sigma)
+        public static Matrix GaussianSample(Matrix mu, double sigma)
         {
             int m = mu.Rows;
             int n = mu.Cols;
@@ -487,7 +466,7 @@ namespace RoomAliveToolkit
             var A = new Matrix(m, n);
             for (int i = 0; i < m; i++)
                 for (int j = 0; j < n; j++)
-                    A[i, j] = NextNormal(mu[i,j], sigma);
+                    A[i, j] = NextGaussianSample(mu[i,j], sigma);
             return A;
         }
 
@@ -495,7 +474,7 @@ namespace RoomAliveToolkit
         static bool generate = false;
         static Random random = new Random();
 
-        public static double NextNormal(double mu, double sigma)
+        public static double NextGaussianSample(double mu, double sigma)
         {
             const double epsilon = double.MinValue;
             const double tau = 2.0 * Math.PI;
@@ -515,7 +494,6 @@ namespace RoomAliveToolkit
             z0 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(tau * u2);
             z1 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(tau * u2);
             return z0 * sigma + mu;
-
         }
     }
 }

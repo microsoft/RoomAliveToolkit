@@ -153,8 +153,6 @@ namespace RoomAliveToolkit
                 LoadEnsemble();
             }
 
-            CameraMath.TestPlanarDLT();
-
             Width = Properties.Settings.Default.FormWidth;
             Height = Properties.Settings.Default.FormHeight;
             splitContainer1.SplitterDistance = Properties.Settings.Default.SplitterDistance;

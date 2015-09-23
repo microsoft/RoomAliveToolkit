@@ -94,28 +94,28 @@ To calibrate a multiple camera/multiple projector setup, keep the following in m
 - The first camera in the .xml is special in that it establishes the coordinate system for the ensemble. When creating a multi-camera .xml file from the user interface, the 4x4 pose matrix for the first camera is set to the identity. This places the first camera in a coordinate frame external to the ensemble. If you already have a global coordinate frame you favor, set the first camera’s pose matrix to its pose in this coordinate frame before running calibration. Calibration will not change it. The pose of the other cameras and projectors will be reported in the same coordinate frame. 
 - The projection mapping sample handles multiple projector and multiple camera configurations (again, only local rendering). The sample picks up the configuration from the .xml file, supplied as a command line argument.
 
-# How does the calibration work?
+# How Does Calibration work?
 
 A full description of how the calibration works is beyond the sope of this README, but, briefly:
 
 - During the Acquire phase of CalibrateEnsemble, each projector projects a series of Gray code patterns in turn. These are captured and saved by all Kinect color cameras. Gray code patterns are used to map from a given pixel coordinate in the Kinect color image to a pixel coordinate in the projector. All cameras observe the Gray code patterns in order to establish which cameras belong to a given 'projector group' (see above). Additionally, the depth image from each Kinect depth camera is saved.
--  CalibrateEnsemble recovers Kinect camera calibration information. This is used to compute precise 3D coordinate of a given point in the depth image may be computed, and to map this 3D point to color camera coordinates.
+-  CalibrateEnsemble recovers Kinect camera calibration information. This is used to compute the precise 3D coordinate of a given point in the depth image, and to map this 3D point to color camera coordinates.
 -  At this point  CalibrateEnsemble has all the information it needs to perform its calibration, even if the cameras and projector are off or disconnected.
 - During the Solve phase of CalibrateEnsemble, for each camera in the projector group, points in the saved depth camera image are transformed to 3D points. The 2D color camera coordinate is computed via the saved Kinect calibration information. These color camera coordinates are then assocated with projector coordinates by way of the Gray code mapping. The end result is a set of 3D points for each depth camera in the group, and their associated 2D projector coordinates.
 - Projector intrinsics (focal length, principle point) and camera extrinsics (depth camera pose, in the projector coordinate frame) are computed by minimizing the error in the projection of 3D points to projector points. Because this projection is nonlinear, we use a standard Levenberg-Marquardt optimization procedure. This is performed for each projector in turn.
 - The 'ensemble' necessarily includes cameras that belong to multiple projector groups. These cameras can be used to put all camera and projector poses in the coordinate frame of the depth camera of the first Kinect listed in the .xml file. This is done via successive matrix compositions.
 - The 'ensemble' can be thought of as a graph of projectors, where each projector is a node, and cameras that belong in more than one group establish an edge between projectors. The previous step of unifying the coordinate systems is done in a greedy fashion, with the consequence that there may be multiple possible estimates of a camera or projector's pose if this graph includes a cycle (consider a ring of projectors, or a 2x2 grid of projectors). To address this possible source of error, a final optimization is performed over all projectors, solving for a single pose for each projector and camera.
 
-# How does the projection mapping work?
+# How Does Projection Mapping Work?
 
 Briefly:
 
 - A 'user view' off-screen render is peformed. This the 'target' or 'desired' visual the user should see after projection  onto a possibly non-flat surface. When rendering 3D virtual objects, this will likely require the user's head position.
 - A graphics projection matrix is assembled for each projector in the ensemble. This uses the projector intrinsics, and, because the principle point of the projector is most likely not at the center of the projected image, uses an 'off-center' or 'oblique' style perspective projection matrix. 
 - The projector's projection matrix is combined with calibrated projector and depth camera pose information to create a transformation matrix mapping a 3D point in the coordinate frame of a given depth camera to a 3D point in the projector's view volume.
-- A second transformation matrix is assembled which maps a point in a given depth camera's coordinate system to the user's view volume. This is used to compute the texture coordinates into the 'user view' (above) associated with each 3D depth camera point.
+- A second transformation matrix is assembled, mapping a point in a given depth camera's coordinate system to the user's view volume. This is used to compute the texture coordinates into the 'user view' (above) associated with each 3D depth camera point.
 - Vertex and geometry shaders use the above transformations to render a depth image to transformed vertices and texture coordinates for a given projector and a given depth camera. Essentially, the shaders render the receiving surface of the projected light, with a texture that is calcuated to match the 'user view' from the user's point of view, as projected by the projector.
-- A projector's final rendering is perfomed by rendering each Kinect depth image using the above shaders. This procedure is performed for all projectors in the ensemble.
+- A projector's final rendering is perfomed by rendering each Kinect depth image using the above shaders. This procedure is performed for all projectors in the ensemble. Note that in this process, the depth images may be updated every frame; this is possible because the calibration and projection mapping process is fundamentally 3D in nature.
 
 
 # More Online Resources

@@ -26,42 +26,6 @@ namespace RoomAliveToolkit.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool ThreeDObjectEnabled {
-            get {
-                return ((bool)(this["ThreeDObjectEnabled"]));
-            }
-            set {
-                this["ThreeDObjectEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool WobbleEffectEnabled {
-            get {
-                return ((bool)(this["WobbleEffectEnabled"]));
-            }
-            set {
-                this["WobbleEffectEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool LocalHeadTrackingEnabled {
-            get {
-                return ((bool)(this["LocalHeadTrackingEnabled"]));
-            }
-            set {
-                this["LocalHeadTrackingEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool LiveDepthEnabled {
             get {
                 return ((bool)(this["LiveDepthEnabled"]));
@@ -73,25 +37,13 @@ namespace RoomAliveToolkit.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool FullScreenEnabled {
             get {
                 return ((bool)(this["FullScreenEnabled"]));
             }
             set {
                 this["FullScreenEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool DesktopDuplicationEnabled {
-            get {
-                return ((bool)(this["DesktopDuplicationEnabled"]));
-            }
-            set {
-                this["DesktopDuplicationEnabled"] = value;
             }
         }
     }

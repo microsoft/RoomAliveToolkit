@@ -3,6 +3,7 @@ struct GSInput
 	float4 pos : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float depth : MYSEMANTIC;
+	float4 worldPos : TEXCOORD1;
 };
 
 struct GSOutput
@@ -10,6 +11,7 @@ struct GSOutput
 	float4 pos : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float depth : MYSEMANTIC;
+	float4 worldPos : TEXCOORD1;
 };
 
 [maxvertexcount(3)]

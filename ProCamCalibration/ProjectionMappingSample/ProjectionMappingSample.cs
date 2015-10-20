@@ -240,7 +240,7 @@ namespace RoomAliveToolkit
                             float dz = handLeftCameraSpacePoint.Z - handRightCameraSpacePoint.Z;
                             distanceSquared = dx * dx + dy * dy + dz * dz;
                         }
-                        var transform = SharpDX.Matrix.RotationY((float)Math.PI) * SharpDX.Matrix.Translation(-0.25f, 0.45f, 0);
+                        var transform = SharpDX.Matrix.RotationY((float)Math.PI) * SharpDX.Matrix.Translation(0, 0.45f, 0);
                         headPosition = SharpDX.Vector3.TransformCoordinate(headPosition, transform);
 
                         if (trackingValid && (distanceSquared < 0.02f) && (alpha > 1))
@@ -724,18 +724,18 @@ namespace RoomAliveToolkit
                 deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
             }
 
-            bool live = false;
+            //bool live = false;
 
             public void StartLive()
             {
-                live = true;
+                //live = true;
                 //new System.Threading.Thread(ColorCameraLoop).Start();
                 new System.Threading.Thread(DepthCameraLoop).Start();
             }
 
             public void StopLive()
             {
-                live = false;
+                //live = false;
             }
 
 

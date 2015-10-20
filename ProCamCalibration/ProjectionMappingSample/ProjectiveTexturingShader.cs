@@ -105,7 +105,7 @@ namespace RoomAliveToolkit
         {
             deviceContext.InputAssembler.InputLayout = vertexInputLayout;
             deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
-            deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(vertexBuffer, VertexPosition.SizeInBytes, 0)); // bytes per vertex
+            deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(vertexBuffer, 16, 0)); // bytes per vertex
             deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
             deviceContext.OutputMerger.DepthStencilState = depthStencilState;
             deviceContext.Rasterizer.State = rasterizerState;
@@ -121,12 +121,6 @@ namespace RoomAliveToolkit
 
             deviceContext.VertexShader.SetShaderResource(0, null); // to avoid warnings when these are later set as render targets
             deviceContext.PixelShader.SetShaderResource(0, null);
-        }
-
-        struct VertexPosition
-        {
-            public SharpDX.Vector4 position;
-            static public int SizeInBytes { get { return 4 * 4; } }
         }
 
         VertexShader vertexShader;

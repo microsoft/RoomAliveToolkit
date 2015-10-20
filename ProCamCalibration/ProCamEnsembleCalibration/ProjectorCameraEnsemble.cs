@@ -702,15 +702,17 @@ namespace RoomAliveToolkit
                                 imagePointSubset.Add(pointSet.imagePoints[k]);
                             }
 
-                            // check that points are not coplanar
-                            Matrix X;
-                            double D;
-                            double ssdToPlane = PlaneFit(worldPointSubset, out X, out D);
+                            Matrix R, t;
+                            CameraMath.PlaneFit(worldPointSubset, out R, out t);
+
                             int numOutliers = 0;
+                            var x = new Matrix(3, 1);
                             foreach (var point in worldPointSubset)
                             {
-                                double distanceFromPlane = X.Dot(point) + D;
-                                if (Math.Abs(distanceFromPlane) > 0.1f)
+                                x.Mult(R, point);
+                                x.Add(t);
+                                double distanceFromPlane = Math.Abs(x[2]);
+                                if (distanceFromPlane > 0.1f)
                                     numOutliers++;
                             }
                             nonCoplanar = (numOutliers > worldPointSubset.Count * 0.10f);
@@ -799,7 +801,6 @@ namespace RoomAliveToolkit
                         var worldPointInlierSet = new List<Matrix>();
                         var imagePointInlierSet = new List<System.Drawing.PointF>();
 
-                        //var R = Vision.Orientation.Rodrigues(rotations[setIndex]);
                         var R = RotationMatrixFromRotationVector(rotations[setIndex]);
                         var t = translations[setIndex];
                         var p = new Matrix(3, 1);
@@ -1004,7 +1005,6 @@ namespace RoomAliveToolkit
                             R[ii, jj] = T[ii, jj];
                     }
 
-                    //var r = Vision.Orientation.RotationVector(R);
                     var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
 
                     for (int ii = 0; ii < 3; ii++)
@@ -1025,7 +1025,6 @@ namespace RoomAliveToolkit
                             R[ii, jj] = T[ii, jj];
                     }
 
-                    //var r = Vision.Orientation.RotationVector(R);
                     var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
 
                     for (int ii = 0; ii < 3; ii++)
@@ -1057,7 +1056,6 @@ namespace RoomAliveToolkit
                     r[0] = p[pi++];
                     r[1] = p[pi++];
                     r[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
                     var R = RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
@@ -1082,7 +1080,6 @@ namespace RoomAliveToolkit
                     r[0] = p[pi++];
                     r[1] = p[pi++];
                     r[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
                     var R = RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
@@ -1185,7 +1182,6 @@ namespace RoomAliveToolkit
                     r[0] = parameters[pi++];
                     r[1] = parameters[pi++];
                     r[2] = parameters[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
                     var R = RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
@@ -1210,7 +1206,6 @@ namespace RoomAliveToolkit
                     r[0] = parameters[pi++];
                     r[1] = parameters[pi++];
                     r[2] = parameters[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
                     var R = RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
@@ -1257,7 +1252,6 @@ namespace RoomAliveToolkit
                     Matrix R, t;
                     CameraMath.DLT(cameraMatrix, distCoeffs, worldPointSets[i], imagePointSets[i], out R, out t);
 
-                    //var r = Vision.Orientation.RotationVector(R);
                     var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
 
                     rotations.Add(r);
@@ -1319,7 +1313,6 @@ namespace RoomAliveToolkit
                     rotation[0] = p[pi++];
                     rotation[1] = p[pi++];
                     rotation[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(rotation);
                     var R = RotationMatrixFromRotationVector(rotation);
 
                     var t = new Matrix(3, 1);
@@ -1674,9 +1667,6 @@ namespace RoomAliveToolkit
         }
         #endregion
 
-
-
-
         public static Matrix RotationMatrixFromRotationVector(Matrix rotationVector)
         {
             double angle = rotationVector.Norm();
@@ -1709,56 +1699,8 @@ namespace RoomAliveToolkit
             return rotationVector;
         }
 
-        static public double PlaneFit(IList<Matrix> points, out Matrix X, out double D)
-        {
-            X = new Matrix(3, 1);
-
-            var mu = new RoomAliveToolkit.Matrix(3, 1);
-            for (int i = 0; i < points.Count; i++)
-                mu.Add(points[i]);
-            mu.Scale(1f / (float)points.Count);
-
-            var A = new RoomAliveToolkit.Matrix(3, 3);
-            var pc = new RoomAliveToolkit.Matrix(3, 1);
-            var M = new RoomAliveToolkit.Matrix(3, 3);
-            for (int i = 0; i < points.Count; i++)
-            {
-                var p = points[i];
-                pc.Sub(p, mu);
-                M.Outer(pc, pc);
-                A.Add(M);
-            }
-
-            var V = new RoomAliveToolkit.Matrix(3, 3);
-            var d = new RoomAliveToolkit.Matrix(3, 1);
-            A.Eig(V, d); // TODO: replace with 3x3 version?
-
-            //Console.WriteLine("------");
-            //Console.WriteLine(A);
-            //Console.WriteLine(V);
-            //Console.WriteLine(d);
-
-            double minEigenvalue = Double.MaxValue;
-            int minEigenvaluei = 0;
-            for (int i = 0; i < 3; i++)
-                if (d[i] < minEigenvalue)
-                {
-                    minEigenvalue = d[i];
-                    minEigenvaluei = i;
-                }
-
-            X.CopyCol(V, minEigenvaluei);
-
-            D = -X.Dot(mu);
-
-            // min eigenvalue is the sum of squared distances to the plane
-            // signed distance is: double distance = X.Dot(point) + D;
-
-            return minEigenvalue;
-        }
-
-
-
+ 
+        
         //[STAThread]
         //public static unsafe void Main()
         //{

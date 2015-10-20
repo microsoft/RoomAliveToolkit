@@ -394,7 +394,7 @@ namespace RoomAliveToolkit
             Console.WriteLine("test\n" + test);
         }
 
-        static public double PlaneFit(IList<Matrix> X, out Matrix R, out Matrix t)
+        static public void PlaneFit(IList<Matrix> X, out Matrix R, out Matrix t, out Matrix d2)
         {
             int n = X.Count;
 
@@ -426,6 +426,11 @@ namespace RoomAliveToolkit
                 V2[i, 0] = V[i, 2];
             }
 
+            d2 = new Matrix(3, 1);
+            d2[2] = d[0];
+            d2[1] = d[1];
+            d2[0] = d[2];
+
             R = new Matrix(3, 3);
             R.Transpose(V2);
 
@@ -436,8 +441,17 @@ namespace RoomAliveToolkit
             t.Mult(R, mu);
             t.Scale(-1);
 
-            // min eigenvalue is the sum of squared distances to the plane
-            return d[0];
+            // eigenvalues are the sum of squared distances in each direction
+            // i.e., min eigenvalue is the sum of squared distances to the plane = d2[2]
+
+            // compute the distance to the plane by transforming to the plane and take z-coordinate:
+            // xPlane = R*x + t; distance = xPlane[2]
+        }
+
+        static public void PlaneFit(IList<Matrix> X, out Matrix R, out Matrix t)
+        {
+            Matrix d;
+            PlaneFit(X, out R, out t, out d);
         }
 
         public static Matrix Homography(List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints)
@@ -556,6 +570,7 @@ namespace RoomAliveToolkit
 
         public static double NextGaussianSample(double mu, double sigma)
         {
+            // Box-Muller transform
             const double epsilon = double.MinValue;
             const double tau = 2.0 * Math.PI;
 

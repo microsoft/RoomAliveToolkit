@@ -87,13 +87,11 @@ namespace RoomAliveToolkit
                 double x, y;
                 Undistort(cameraMatrix, distCoeffs, imagePoint.X, imagePoint.Y, out x, out y);
 
-                double w = 1;
-
                 int ii = 2 * j;
-                A[ii, 4] = -w * X[0];
-                A[ii, 5] = -w * X[1];
-                A[ii, 6] = -w * X[2];
-                A[ii, 7] = -w;
+                A[ii, 4] = -X[0];
+                A[ii, 5] = -X[1];
+                A[ii, 6] = -X[2];
+                A[ii, 7] = -1;
 
                 A[ii, 8] = y * X[0];
                 A[ii, 9] = y * X[1];
@@ -101,10 +99,10 @@ namespace RoomAliveToolkit
                 A[ii, 11] = y;
 
                 ii++; // next row
-                A[ii, 0] = w * X[0];
-                A[ii, 1] = w * X[1];
-                A[ii, 2] = w * X[2];
-                A[ii, 3] = w;
+                A[ii, 0] = X[0];
+                A[ii, 1] = X[1];
+                A[ii, 2] = X[2];
+                A[ii, 3] = 1;
 
                 A[ii, 8] = -x * X[0];
                 A[ii, 9] = -x * X[1];
@@ -130,35 +128,36 @@ namespace RoomAliveToolkit
             P.Reshape(Pcolumn);
 
             R = new Matrix(3, 3);
-            t = new Matrix(3, 1);
-
-            for (int ii = 0; ii < 3; ii++)
-            {
-                t[ii] = P[ii, 3];
-                for (int jj = 0; jj < 3; jj++)
-                    R[ii, jj] = P[ii, jj];
-            }
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    R[i, j] = P[i, j];
 
             if (R.Det3x3() < 0)
             {
                 R.Scale(-1);
-                t.Scale(-1);
+                P.Scale(-1);
             }
 
             // orthogonalize R
             {
                 var U = new Matrix(3, 3);
-                var Vt = new Matrix(3, 3);
                 var V = new Matrix(3, 3);
                 var ww = new Matrix(3, 1);
-
                 R.SVD(U, ww, V);
-                Vt.Transpose(V);
-
-                R.Mult(U, Vt);
-                double s = ww.Sum() / 3.0;
-                t.Scale(1.0 / s);
+                R.MultAAT(U, V);
             }
+
+            // determine scale factor
+            var RP = new Matrix(3, 3);
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    RP[i, j] = P[i, j];
+            double s = RP.Norm() / R.Norm();
+
+            t = new Matrix(3, 1);
+            for (int i = 0; i < 3; i++)
+                t[i] = P[i, 3];
+            t.Scale(1.0 / s);
         }
 
         public static void PlanarDLT(Matrix cameraMatrix, Matrix distCoeffs, List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints, Matrix Rplane, Matrix Tplane, out Matrix R, out Matrix t)
@@ -204,7 +203,7 @@ namespace RoomAliveToolkit
             }
 
             var H = Homography(worldPoints, undistortedImagePoints);
-            H.Scale(H[2, 2]);
+            H.Scale(1.0 / H[2, 2]);
 
             var r1 = new Matrix(3, 1);
             r1.CopyCol(H, 0);
@@ -228,6 +227,87 @@ namespace RoomAliveToolkit
                 R[i, 1] = r2[i];
                 R[i, 2] = r3[i];
             }
+        }
+
+        public static void TestDLT()
+        {
+            var cameraMatrix = Matrix.Identity(3, 3);
+            cameraMatrix[0, 0] = 700;
+            cameraMatrix[1, 1] = 700;
+            cameraMatrix[0, 2] = 250;
+            cameraMatrix[1, 2] = 220;
+
+            var distCoeffs = new Matrix(5, 1);
+            distCoeffs[0] = 0.05;
+            distCoeffs[1] = -0.1;
+
+            // generate a bunch of points in a volume
+            // project under some other camera (view)
+
+            var R = new Matrix(3, 3);
+            R.RotEuler2Matrix(0.2, 0.3, 0.3);
+
+            var t = new Matrix(3, 1);
+            t[0] = 2;
+            t[1] = 0;
+            t[2] = -4;
+
+            var modelPoints = new List<Matrix>();
+            var imagePoints = new List<System.Drawing.PointF>();
+            var zero3 = Matrix.Zero(3, 1);
+
+            for (float z = 1f; z <= 3.0f; z += 0.4f)
+                for (float y = -1f; y <= 1.0f; y += 0.4f)
+                    for (float x = -1f; x <= 1.0f; x += 0.4f)
+                    {
+                        var model = new Matrix(3, 1);
+                        model[0] = x;
+                        model[1] = y;
+                        model[2] = z;
+                        modelPoints.Add(model);
+
+                        // under our camera:
+                        var transformedPoint = new Matrix(3, 1);
+                        transformedPoint.Mult(R, model);
+                        transformedPoint.Add(t);
+
+                        var noise = GaussianSample(zero3, 0.1 * 0.1);
+                        transformedPoint.Add(noise);
+
+                        double u, v;
+                        Project(cameraMatrix, distCoeffs, transformedPoint[0], transformedPoint[1], transformedPoint[2], out u, out v);
+
+                        var image = new System.Drawing.PointF();
+                        image.X = (float)u;
+                        image.Y = (float)v;
+                        imagePoints.Add(image);
+                    }
+
+            Console.WriteLine("x = [");
+            for (int i = 0; i < imagePoints.Count; i++)
+                Console.WriteLine("{0} {1}", imagePoints[i].X, imagePoints[i].Y);
+            Console.WriteLine("]';");
+
+            Console.WriteLine("X = [");
+            for (int i = 0; i < modelPoints.Count; i++)
+                Console.WriteLine("{0} {1} {2}", modelPoints[i][0], modelPoints[i][1], modelPoints[i][2]);
+            Console.WriteLine("]';");
+
+            Console.WriteLine("fc = [{0} {1}];", cameraMatrix[0, 0], cameraMatrix[1, 1]);
+            Console.WriteLine("cc = [{0} {1}];", cameraMatrix[0, 2], cameraMatrix[1, 2]);
+            Console.WriteLine("kc = [{0} {1} 0 0 0];", distCoeffs[0], distCoeffs[1]);
+            Console.WriteLine();
+
+            Console.WriteLine("R\n" + R);
+            Console.WriteLine("t\n" + t);
+
+            var Rest = new Matrix(3, 3);
+            var test = new Matrix(3, 1);
+
+            DLT(cameraMatrix, distCoeffs, modelPoints, imagePoints, out Rest, out test);
+
+            Console.WriteLine("Rest\n" + Rest);
+            Console.WriteLine("test\n" + test);
         }
 
         public static void TestPlanarDLT()

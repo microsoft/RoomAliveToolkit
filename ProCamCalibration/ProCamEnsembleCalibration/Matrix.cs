@@ -2,6 +2,7 @@ using System;
 using System.Xml.Serialization;
 using System.IO;
 using MathNet.Numerics.LinearAlgebra;
+using System.Threading.Tasks;
 
 namespace RoomAliveToolkit
 {
@@ -408,6 +409,7 @@ namespace RoomAliveToolkit
 		}
 
 		public void MultAAT(Matrix A, Matrix B) { MultAAT(A, B, this); }
+
 		public static void MultATA(Matrix A, Matrix B, Matrix C)		
 		{
 			for (int i = 0; i < A.n; i++)      // A.m
@@ -422,8 +424,25 @@ namespace RoomAliveToolkit
 
 		public void MultATA(Matrix A, Matrix B) { MultATA(A, B, this); }
 
-	
-	
+
+        public static void MultATAParallel(Matrix A, Matrix B, Matrix C)		
+		{
+            Parallel.For(0, A.n, i =>
+            {
+                for (int j = 0; j < B.n; j++)
+                {
+                    double sum = 0;
+                    for (int k = 0; k < A.m; k++)  // A.n
+                        sum += A[k, i] * B[k, j];
+                    C[i, j] = sum;
+                }
+            }
+            );
+        }
+
+        public void MultATAParallel(Matrix A, Matrix B) { MultATAParallel(A, B, this); }
+
+
 
         public static Matrix<double> ToMathNet(Matrix A)
         {
@@ -888,8 +907,55 @@ namespace RoomAliveToolkit
 			}
 		}
 
+        public static Matrix GaussianSample(int m, int n)
+        {
+            var A = new Matrix(m, n);
+            for (int i = 0; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    A[i, j] = NextGaussianSample(0, 1);
+            return A;
+        }
 
-		public override string ToString()
+        public static Matrix GaussianSample(Matrix mu, double sigma)
+        {
+            int m = mu.Rows;
+            int n = mu.Cols;
+
+            var A = new Matrix(m, n);
+            for (int i = 0; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    A[i, j] = NextGaussianSample(mu[i, j], sigma);
+            return A;
+        }
+
+        static double z0, z1;
+        static bool generate = false;
+        static Random random = new Random();
+
+        public static double NextGaussianSample(double mu, double sigma)
+        {
+            // Box-Muller transform
+            const double epsilon = double.MinValue;
+            const double tau = 2.0 * Math.PI;
+
+            generate = !generate;
+            if (!generate)
+                return z1 * sigma + mu;
+
+            double u1, u2;
+            do
+            {
+                u1 = random.NextDouble();
+                u2 = random.NextDouble();
+            }
+            while (u1 <= epsilon);
+
+            z0 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(tau * u2);
+            z1 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(tau * u2);
+            return z0 * sigma + mu;
+        }
+
+        public override string ToString()
 		{
 			string s = "";
 

@@ -92,8 +92,7 @@ namespace RoomAliveToolkit
             var rotation = new Matrix(3, 1);
             var translation = new Matrix(3, 1);
             var colorError = CalibrateColorCamera(objectPoints1, colorPoints1, colorCameraMatrix, colorLensDistortion, rotation, translation);
-            //var rotationMatrix = Orientation.Rodrigues(rotation);
-            var rotationMatrix = RoomAliveToolkit.ProjectorCameraEnsemble.RotationMatrixFromRotationVector(rotation);
+            var rotationMatrix = CameraMath.RotationMatrixFromRotationVector(rotation);
 
             depthToColorTransform = Matrix.Identity(4, 4);
             for (int i = 0; i < 3; i++)
@@ -357,8 +356,7 @@ namespace RoomAliveToolkit
             {
                 Matrix R, t;
                 CameraMath.DLT(cameraMatrix, distCoeffs, worldPoints, imagePoints, out R, out t);
-                //var r = Orientation.RotationVector(R);
-                var r = RoomAliveToolkit.ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
+                var r = CameraMath.RotationVectorFromRotationMatrix(R);
                 rotation.Copy(r);
                 translation.Copy(t);
             }
@@ -423,8 +421,7 @@ namespace RoomAliveToolkit
                 t[1] = p[pi++];
                 t[2] = p[pi++];
 
-                //var R = Orientation.Rodrigues(r);
-                var R = RoomAliveToolkit.ProjectorCameraEnsemble.RotationMatrixFromRotationVector(r);
+                var R = CameraMath.RotationMatrixFromRotationVector(r);
 
 
 

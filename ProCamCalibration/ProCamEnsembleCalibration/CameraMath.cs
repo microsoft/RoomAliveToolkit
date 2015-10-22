@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SharpDX;
 
 namespace RoomAliveToolkit
 {
@@ -205,6 +206,8 @@ namespace RoomAliveToolkit
             var H = Homography(worldPoints, undistortedImagePoints);
             H.Scale(1.0 / H[2, 2]);
 
+            //Console.WriteLine(H);
+
             var r1 = new Matrix(3, 1);
             r1.CopyCol(H, 0);
 
@@ -271,7 +274,7 @@ namespace RoomAliveToolkit
                         transformedPoint.Mult(R, model);
                         transformedPoint.Add(t);
 
-                        var noise = GaussianSample(zero3, 0.1 * 0.1);
+                        var noise = Matrix.GaussianSample(zero3, 0.1 * 0.1);
                         transformedPoint.Add(noise);
 
                         double u, v;
@@ -354,7 +357,7 @@ namespace RoomAliveToolkit
                     model[1] = y;
                     model[2] = 0;
 
-                    var noise = GaussianSample(zero3, 0.1 * 0.1);
+                    var noise = Matrix.GaussianSample(zero3, 0.1 * 0.1);
 
                     var world = new Matrix(3, 1);
                     world.Mult(modelR, model);
@@ -543,52 +546,362 @@ namespace RoomAliveToolkit
             return H;
         }
 
-        public static Matrix GaussianSample(int m, int n)
+        public static double CalibrateCamera(List<List<Matrix>> worldPointSets, List<List<System.Drawing.PointF>> imagePointSets,
+    Matrix cameraMatrix, ref List<Matrix> rotations, ref List<Matrix> translations)
         {
-            var A = new Matrix(m, n);
-            for (int i = 0; i < m; i++)
-                for (int j = 0; j < n; j++)
-                    A[i,j] = NextGaussianSample(0, 1);
-            return A;
-        }
+            int nSets = worldPointSets.Count;
+            int nPoints = 0;
 
-        public static Matrix GaussianSample(Matrix mu, double sigma)
-        {
-            int m = mu.Rows;
-            int n = mu.Cols;
+            for (int i = 0; i < nSets; i++)
+                nPoints += worldPointSets[i].Count; // for later
 
-            var A = new Matrix(m, n);
-            for (int i = 0; i < m; i++)
-                for (int j = 0; j < n; j++)
-                    A[i, j] = NextGaussianSample(mu[i,j], sigma);
-            return A;
-        }
+            var distCoeffs = Matrix.Zero(2, 1);
 
-        static double z0, z1;
-        static bool generate = false;
-        static Random random = new Random();
 
-        public static double NextGaussianSample(double mu, double sigma)
-        {
-            // Box-Muller transform
-            const double epsilon = double.MinValue;
-            const double tau = 2.0 * Math.PI;
+            //// if necessary run DLT on each point set to get initial rotation and translations
+            //if (rotations == null)
+            //{
+            //    rotations = new List<Matrix>();
+            //    translations = new List<Matrix>();
 
-            generate = !generate;
-            if (!generate)
-                return z1 * sigma + mu;
+            //    for (int i = 0; i < nSets; i++)
+            //    {
+            //        Matrix R, t;
+            //        CameraMath.DLT(cameraMatrix, distCoeffs, worldPointSets[i], imagePointSets[i], out R, out t);
 
-            double u1, u2;
-            do
+            //        var r = CameraMath.RotationVectorFromRotationMatrix(R);
+
+            //        rotations.Add(r);
+            //        translations.Add(t);
+            //    }
+            //}
+
+            // Levenberg-Marquardt for camera matrix (ignore lens distortion for now)
+
+            // pack parameters into vector
+            // parameters: camera has f, cx, cy; each point set has rotation + translation (6)
+            int nParameters = 3 + 6 * nSets;
+            var parameters = new Matrix(nParameters, 1);
+
             {
-                u1 = random.NextDouble();
-                u2 = random.NextDouble();
+                int pi = 0;
+                parameters[pi++] = cameraMatrix[0, 0]; // f
+                parameters[pi++] = cameraMatrix[0, 2]; // cx
+                parameters[pi++] = cameraMatrix[1, 2]; // cy
+                for (int i = 0; i < nSets; i++)
+                {
+                    parameters[pi++] = rotations[i][0];
+                    parameters[pi++] = rotations[i][1];
+                    parameters[pi++] = rotations[i][2];
+                    parameters[pi++] = translations[i][0];
+                    parameters[pi++] = translations[i][1];
+                    parameters[pi++] = translations[i][2];
+                }
             }
-            while (u1 <= epsilon);
 
-            z0 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(tau * u2);
-            z1 = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(tau * u2);
-            return z0 * sigma + mu;
+            // size of our error vector
+            int nValues = nPoints * 2; // each component (x,y) is a separate entry
+
+
+
+            LevenbergMarquardt.Function function = delegate (Matrix p)
+            {
+                var fvec = new Matrix(nValues, 1);
+
+                // unpack parameters
+                int pi = 0;
+                double f = p[pi++];
+                double cx = p[pi++];
+                double cy = p[pi++];
+
+                var K = Matrix.Identity(3, 3);
+                K[0, 0] = f;
+                K[1, 1] = f;
+                K[0, 2] = cx;
+                K[1, 2] = cy;
+
+                var d = Matrix.Zero(2, 1);
+
+                int fveci = 0;
+
+                for (int i = 0; i < nSets; i++)
+                {
+                    var rotation = new Matrix(3, 1);
+                    rotation[0] = p[pi++];
+                    rotation[1] = p[pi++];
+                    rotation[2] = p[pi++];
+                    var R = RotationMatrixFromRotationVector(rotation);
+
+                    var t = new Matrix(3, 1);
+                    t[0] = p[pi++];
+                    t[1] = p[pi++];
+                    t[2] = p[pi++];
+
+                    var worldPoints = worldPointSets[i];
+                    var imagePoints = imagePointSets[i];
+                    var x = new Matrix(3, 1);
+
+                    for (int j = 0; j < worldPoints.Count; j++)
+                    {
+                        // transform world point to local camera coordinates
+                        x.Mult(R, worldPoints[j]);
+                        x.Add(t);
+
+                        // fvec_i = y_i - f(x_i)
+                        double u, v;
+                        CameraMath.Project(K, d, x[0], x[1], x[2], out u, out v);
+
+                        var imagePoint = imagePoints[j];
+                        fvec[fveci++] = imagePoint.X - u;
+                        fvec[fveci++] = imagePoint.Y - v;
+                    }
+                }
+                return fvec;
+            };
+
+            // optimize
+            var calibrate = new LevenbergMarquardt(function);
+            calibrate.minimumReduction = 1.0e-4;
+            calibrate.Minimize(parameters);
+
+            //while (calibrate.State == LevenbergMarquardt.States.Running)
+            //{
+            //    var rmsError = calibrate.MinimizeOneStep(parameters);
+            //    Console.WriteLine("rms error = " + rmsError);
+            //}
+            //for (int i = 0; i < nParameters; i++)
+            //    Console.WriteLine(parameters[i] + "\t");
+            //Console.WriteLine();
+
+            // unpack parameters
+            {
+                int pi = 0;
+                double f = parameters[pi++];
+                double cx = parameters[pi++];
+                double cy = parameters[pi++];
+                cameraMatrix[0, 0] = f;
+                cameraMatrix[1, 1] = f;
+                cameraMatrix[0, 2] = cx;
+                cameraMatrix[1, 2] = cy;
+
+                for (int i = 0; i < nSets; i++)
+                {
+                    rotations[i][0] = parameters[pi++];
+                    rotations[i][1] = parameters[pi++];
+                    rotations[i][2] = parameters[pi++];
+
+                    translations[i][0] = parameters[pi++];
+                    translations[i][1] = parameters[pi++];
+                    translations[i][2] = parameters[pi++];
+                }
+            }
+
+            return calibrate.RMSError;
         }
+
+        public static double CalibrateCameraExtrinsicsOnly(List<List<Matrix>> worldPointSets, List<List<System.Drawing.PointF>> imagePointSets,
+    Matrix cameraMatrix, ref List<Matrix> rotations, ref List<Matrix> translations)
+        {
+            int nSets = worldPointSets.Count;
+            int nPoints = 0;
+
+            for (int i = 0; i < nSets; i++)
+                nPoints += worldPointSets[i].Count; // for later
+
+            var distCoeffs = Matrix.Zero(2, 1);
+
+
+            //// if necessary run DLT on each point set to get initial rotation and translations
+            //if (rotations == null)
+            //{
+            //    rotations = new List<Matrix>();
+            //    translations = new List<Matrix>();
+
+            //    for (int i = 0; i < nSets; i++)
+            //    {
+            //        Matrix R, t;
+            //        CameraMath.DLT(cameraMatrix, distCoeffs, worldPointSets[i], imagePointSets[i], out R, out t);
+
+            //        var r = CameraMath.RotationVectorFromRotationMatrix(R);
+
+            //        rotations.Add(r);
+            //        translations.Add(t);
+            //    }
+            //}
+
+            // Levenberg-Marquardt for camera matrix (ignore lens distortion for now)
+
+            // pack parameters into vector
+            // parameters: camera has f, cx, cy; each point set has rotation + translation (6)
+            //int nParameters = 3 + 6 * nSets;
+            int nParameters = 6 * nSets;
+            var parameters = new Matrix(nParameters, 1);
+
+            {
+                int pi = 0;
+                //parameters[pi++] = cameraMatrix[0, 0]; // f
+                //parameters[pi++] = cameraMatrix[0, 2]; // cx
+                //parameters[pi++] = cameraMatrix[1, 2]; // cy
+                for (int i = 0; i < nSets; i++)
+                {
+                    parameters[pi++] = rotations[i][0];
+                    parameters[pi++] = rotations[i][1];
+                    parameters[pi++] = rotations[i][2];
+                    parameters[pi++] = translations[i][0];
+                    parameters[pi++] = translations[i][1];
+                    parameters[pi++] = translations[i][2];
+                }
+            }
+
+            // size of our error vector
+            int nValues = nPoints * 2; // each component (x,y) is a separate entry
+
+
+
+            LevenbergMarquardt.Function function = delegate (Matrix p)
+            {
+                var fvec = new Matrix(nValues, 1);
+
+                // unpack parameters
+                int pi = 0;
+                //double f = p[pi++];
+                //double cx = p[pi++];
+                //double cy = p[pi++];
+
+                var K = Matrix.Identity(3, 3);
+                //K[0, 0] = f;
+                //K[1, 1] = f;
+                //K[0, 2] = cx;
+                //K[1, 2] = cy;
+
+                K[0, 0] = cameraMatrix[0, 0];
+                K[1, 1] = cameraMatrix[1, 1];
+                K[0, 2] = cameraMatrix[0, 2];
+                K[1, 2] = cameraMatrix[1, 2];
+
+
+                var d = Matrix.Zero(2, 1);
+
+                int fveci = 0;
+
+                for (int i = 0; i < nSets; i++)
+                {
+                    var rotation = new Matrix(3, 1);
+                    rotation[0] = p[pi++];
+                    rotation[1] = p[pi++];
+                    rotation[2] = p[pi++];
+                    var R = RotationMatrixFromRotationVector(rotation);
+
+                    var t = new Matrix(3, 1);
+                    t[0] = p[pi++];
+                    t[1] = p[pi++];
+                    t[2] = p[pi++];
+
+                    var worldPoints = worldPointSets[i];
+                    var imagePoints = imagePointSets[i];
+                    var x = new Matrix(3, 1);
+
+                    for (int j = 0; j < worldPoints.Count; j++)
+                    {
+                        // transform world point to local camera coordinates
+                        x.Mult(R, worldPoints[j]);
+                        x.Add(t);
+
+                        // fvec_i = y_i - f(x_i)
+                        double u, v;
+                        CameraMath.Project(K, d, x[0], x[1], x[2], out u, out v);
+
+                        var imagePoint = imagePoints[j];
+                        fvec[fveci++] = imagePoint.X - u;
+                        fvec[fveci++] = imagePoint.Y - v;
+                    }
+                }
+                return fvec;
+            };
+
+            // optimize
+            var calibrate = new LevenbergMarquardt(function);
+            calibrate.minimumReduction = 1.0e-4;
+            calibrate.Minimize(parameters);
+
+            //while (calibrate.State == LevenbergMarquardt.States.Running)
+            //{
+            //    var rmsError = calibrate.MinimizeOneStep(parameters);
+            //    Console.WriteLine("rms error = " + rmsError);
+            //}
+            //for (int i = 0; i < nParameters; i++)
+            //    Console.WriteLine(parameters[i] + "\t");
+            //Console.WriteLine();
+
+            // unpack parameters
+            {
+                int pi = 0;
+                //double f = parameters[pi++];
+                //double cx = parameters[pi++];
+                //double cy = parameters[pi++];
+                //cameraMatrix[0, 0] = f;
+                //cameraMatrix[1, 1] = f;
+                //cameraMatrix[0, 2] = cx;
+                //cameraMatrix[1, 2] = cy;
+
+                for (int i = 0; i < nSets; i++)
+                {
+                    rotations[i][0] = parameters[pi++];
+                    rotations[i][1] = parameters[pi++];
+                    rotations[i][2] = parameters[pi++];
+
+                    translations[i][0] = parameters[pi++];
+                    translations[i][1] = parameters[pi++];
+                    translations[i][2] = parameters[pi++];
+                }
+            }
+
+            return calibrate.RMSError;
+        }
+
+        public static void ExtrinsicsInit(Matrix cameraMatrix, Matrix distCoeffs, List<Matrix> worldPoints, List<System.Drawing.PointF> imagePoints, out Matrix R, out Matrix t)
+        {
+            // run planar or non planar DLT
+            Matrix Rplane, tplane, d;
+            PlaneFit(worldPoints, out Rplane, out tplane, out d);
+            bool planar = (d[2] / d[1]) < 0.001f;
+            if (planar)
+                PlanarDLT(cameraMatrix, distCoeffs, worldPoints, imagePoints, Rplane, tplane, out R, out t);
+            else
+                DLT(cameraMatrix, distCoeffs, worldPoints, imagePoints, out R, out t);
+        }
+
+        public static Matrix RotationMatrixFromRotationVector(Matrix rotationVector)
+        {
+            double angle = rotationVector.Norm();
+            var axis = new SharpDX.Vector3((float)(rotationVector[0] / angle), (float)(rotationVector[1] / angle), (float)(rotationVector[2] / angle));
+
+            // Why the negative sign? SharpDX returns a post-multiply matrix. Instead of transposing to get the pre-multiply matrix we just invert the input rotation.
+            var sR = SharpDX.Matrix.RotationAxis(axis, -(float)angle);
+
+            var R = new Matrix(3, 3);
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    R[i, j] = sR[i, j];
+            return R;
+        }
+
+        public static Matrix RotationVectorFromRotationMatrix(Matrix R)
+        {
+            var sR = new SharpDX.Matrix();
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    sR[i, j] = (float)R[i, j];
+            var q = SharpDX.Quaternion.RotationMatrix(sR);
+
+            // Why the negative sign? SharpDX assumes a post-multiply rotation matrix. Instead of transposing the input we invert the output quaternion.
+            var sRotationVector = -q.Angle * q.Axis;
+
+            var rotationVector = new Matrix(3, 1);
+            for (int i = 0; i < 3; i++)
+                rotationVector[i] = sRotationVector[i];
+            return rotationVector;
+        }
+
     }
 }

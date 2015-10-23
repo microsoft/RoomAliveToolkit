@@ -14,6 +14,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectorServer", "ProjectorServer\ProjectorServer.csproj", "{FB2095C9-8DCE-48F4-AFC3-84F4EA89C0EE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B29916C5-A0DD-464F-8104-E6DA0FD22C0B}"
+	ProjectSection(SolutionItems) = preProject
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinectServer", "KinectServer\KinectServer.csproj", "{706459E3-7DFE-4894-BCCF-6F82D0D14050}"
 	ProjectSection(ProjectDependencies) = postProject

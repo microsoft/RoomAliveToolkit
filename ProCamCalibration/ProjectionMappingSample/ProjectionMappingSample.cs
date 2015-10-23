@@ -88,34 +88,6 @@ namespace RoomAliveToolkit
             // user view viewport
             userViewViewport = new Viewport(0, 0, userViewTextureWidth, userViewTextureHeight, 0f, 1f);
 
-            // desktop region texture
-
-            if (desktopDuplicationEnabled)
-            {
-                windowPtr = FindWindow(null, "Untitled - Notepad");
-
-                // maybe use FindWindowEx to find child window
-
-                var rect = new RECT();
-                GetWindowRect(windowPtr, out rect);
-                var desktopTextureDesc = new Texture2DDescription()
-                {
-                    Width = (rect.Right + rightNudge) - (rect.Left + leftNudge),
-                    Height = (rect.Bottom + bottomNudge) - (rect.Top + topNudge),
-                    MipLevels = 1, // revisit this; we may benefit from mipmapping?
-                    ArraySize = 1,
-                    Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
-                    SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
-                    Usage = ResourceUsage.Default,
-                    BindFlags = BindFlags.ShaderResource,
-                    CpuAccessFlags = CpuAccessFlags.None,
-                };
-                desktopTexture = new Texture2D(device, desktopTextureDesc);
-                desktopTextureSRV = new ShaderResourceView(device, desktopTexture);
-            }
-
-
-
             // create a form for each projector
             foreach (var projector in ensemble.projectors)
             {
@@ -135,7 +107,8 @@ namespace RoomAliveToolkit
             outputDuplication = output.DuplicateOutput(device);
 
 
-            userViewForm = new MainForm(factory, device, renderLock);
+            userViewForm = new Form1(factory, device, renderLock);
+            userViewForm.Text = "User View";
             userViewForm.Show();
 
 
@@ -194,13 +167,6 @@ namespace RoomAliveToolkit
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         PointLight pointLight = new PointLight();
         Texture2D desktopTexture;
-
-        IntPtr windowPtr;
-        const int leftNudge = 9;
-        const int topNudge = -10;
-        const int rightNudge = 0;
-        const int bottomNudge = 60;
-
 
         SharpDX.WIC.ImagingFactory2 imagingFactory = new ImagingFactory2();
         float alpha = 1;
@@ -318,24 +284,62 @@ namespace RoomAliveToolkit
                         radialWobbleShader.Render(deviceContext, userViewSRV, filteredUserViewRenderTargetView);
                     }
 
-
                     // desktop duplication
                     if (desktopDuplicationEnabled)
                     {
+                        // update the desktop texture; this will block until there is some change
                         var outputDuplicateFrameInformation = default(OutputDuplicateFrameInformation);
                         SharpDX.DXGI.Resource resource = null;
                         outputDuplication.AcquireNextFrame(1000, out outputDuplicateFrameInformation, out resource);
                         var texture = resource.QueryInterface<Texture2D>();
 
+                        // pick up the window under the cursor
+                        var cursorPos = new POINT();
+                        GetCursorPos(out cursorPos);
+                        var hwnd = WindowFromPoint(cursorPos);
                         var rect = new RECT();
-                        GetWindowRect(windowPtr, out rect);
+                        GetWindowRect(hwnd, out rect);
 
+                        // adjust bounds so falls within source texture
+                        if (rect.Left < 0) rect.Left = 0;
+                        if (rect.Top < 0) rect.Top = 0;
+                        if (rect.Right > texture.Description.Width - 1) rect.Right = texture.Description.Width;
+                        if (rect.Bottom > texture.Description.Height - 1) rect.Bottom = texture.Description.Height;
+
+                        int width = rect.Right - rect.Left;
+                        int height = rect.Bottom - rect.Top;
+
+                        // resize our texture if necessary
+                        if ((desktopTexture == null) || (desktopTexture.Description.Width != width) || (desktopTexture.Description.Height != height))
+                        {
+                            if (desktopTexture != null)
+                            {
+                                desktopTextureSRV.Dispose();
+                                desktopTexture.Dispose();
+                            }
+                            var desktopTextureDesc = new Texture2DDescription()
+                            {
+                                Width = width,
+                                Height = height,
+                                MipLevels = 1, // revisit this; we may benefit from mipmapping?
+                                ArraySize = 1,
+                                Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
+                                SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
+                                Usage = ResourceUsage.Default,
+                                BindFlags = BindFlags.ShaderResource,
+                                CpuAccessFlags = CpuAccessFlags.None,
+                            };
+                            desktopTexture = new Texture2D(device, desktopTextureDesc);
+                            desktopTextureSRV = new ShaderResourceView(device, desktopTexture);
+                        }
+
+                        // copy the winodw region into our texture
                         var sourceRegion = new ResourceRegion()
                         {
-                            Left = rect.Left + leftNudge,
-                            Right = rect.Right + rightNudge,
-                            Top = rect.Top + topNudge,
-                            Bottom = rect.Bottom + bottomNudge,
+                            Left = rect.Left,
+                            Right = rect.Right,
+                            Top = rect.Top,
+                            Bottom = rect.Bottom,
                             Front = 0,
                             Back = 1,
                         };
@@ -343,9 +347,9 @@ namespace RoomAliveToolkit
                         texture.Dispose();
                     }
 
-
                     // render user view to seperate form
-                    passThroughShader.viewport = new Viewport(0, 0, userViewForm.Width, userViewForm.Height);
+                    passThroughShader.viewport = new Viewport(0, 0, userViewForm.videoPanel1.Width, userViewForm.videoPanel1.Height);
+
                     // TODO: clean this up by simply using a pointer to the userViewSRV
                     if (threeDObjectEnabled)
                     {
@@ -406,7 +410,7 @@ namespace RoomAliveToolkit
                         outputDuplication.ReleaseFrame();
 
 
-                    Console.WriteLine(stopwatch.ElapsedMilliseconds);
+                    //Console.WriteLine(stopwatch.ElapsedMilliseconds);
                     stopwatch.Restart();
                 }
             }
@@ -811,8 +815,22 @@ namespace RoomAliveToolkit
             public int Left, Top, Right, Bottom;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x, y;
+        }
+
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool GetClientRect(IntPtr hwnd, out RECT lpRect);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr WindowFromPoint(POINT Point);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool GetCursorPos(out POINT lpPoint);
     }
 }

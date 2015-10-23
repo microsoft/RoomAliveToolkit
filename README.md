@@ -4,13 +4,14 @@ The RoomAlive Toolkit calibrates multiple projectors and cameras to enable immer
 
 This document has a few things you should know about using the toolkit's projector/camera calibration, and gives a tutorial on how to calibrate one projector and Kinect sensor (AKA 'camera').
 
-
 # Prerequisites
 
 * Visual Studio 2015 Community Edition (or better)
 * Kinect for Windows v2 SDK
 
-The project uses SharpDX and Math.NET Numerics packages. These should be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
+The project uses SharpDX and Math.NET Numerics packages. These will be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
+
+The 'Shaders' project requires Visual C++. Note that in Visual Studio 2015, Visual C++ is not installed by default. You may be prompted to install the necessary components when building the 'Shaders' project of the RoomAlive Toolkit.
 
 # Tutorial: Calibrating One Camera and One Projector
 
@@ -18,9 +19,9 @@ We outline the procedure for calibrating one projector and one camera. While one
 
 ## Room Setup
 
-*Important*: The current release of the calibration tool does not address the case where the projection surface is flat (such as a bare wall). If the projection surface is flat, place some sizable objects, such as a couch, a few boxes, whatever you have handy, to create a non-flat projection surface. 
+Place the Kinect v2 sensor so that it views most of the projected image, and so that the projected image occupies most of the Kinect's viweable area. Precise alignment is not critical (that's part of the point of calibration, right?), but both the Kinect color camera and Kinect depth camera must observe a good portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
 
-Place the Kinect v2 sensor so that it views most of the projected image, and so that projector fills much of the camera's view. Precise alignment is not critical (that's part of the point of calibration), but both the Kinect color camera and Kinect depth camera must observe a good portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
+*Important*: By default, the calibration procedure will attempt to calculate projector focal length and principal point. This will succeed only if the projection surface is not flat! You must, at least once, calibrate with a non-flat surface to recover projector focal length and principal point. To create a non-flat projection surface, it may suffice to place some sizable objects, such as a couch, a few boxes, whatever you have on hand (yes, if this is your first calibration, you must do this!). In subsequent calibrations, if the projection surface is determined to be flat, the previously calculated focal length and principal point will be used.
 
 Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, do not move it after calibration is performed. It is a good idea to set it to one extreme or another, so that later you will know if it has been changed.
 
@@ -44,6 +45,8 @@ Open calibration.xml with a text editor (Visual Studio is a good choice). Note t
 
 The one thing you will need to change is the ‘displayIndex’ value under the single projector. If there is only one main display and the projector attached to the PC, the projector displayIndex probably should be ‘1’ (the main display being ‘0’). To verify this, return to CalibrateEnsemble.exe and select Setup… Show Projector Server Connected Displays. This will open a window on all available displays showing the displayIndex value for each (note that these values may not match the values reported in the Display Settings dialog in Windows). Select Setup… Hide Projector Server Connected Displays when you have noted the displayIndex associated with the projector.
 
+*Important*: ProjectorServer and the calibration process is not High-DPI aware. If you find that the display showing the display index does not fill the entire projected display area, turn off DPI scaling (set to 100%), and try again.
+
 Change the displayIndex value (again, probably ‘1’) and save the file.
 
 ## Acquire Calibration Images
@@ -58,7 +61,9 @@ Once the acquisition has completed, take a moment to browse the directory with c
 
 ## Run the Calibration
 
-Select Calibrate… Solve to begin the calibration process. Watch as a bunch of debug text and numbers scroll by. The final RMS error reported should hopefully be some value less than 1.0. If it is much more than that, then something has gone wrong: recall that the calibration currently does not work with flat scenes. Consider adding more complexity to the scene such as a chair or a box. Verify that the projector and cameras are overlapping by running the Kinect SDK Color Basics sample and seeing that the color camera sees most if not all of the projected image. You may need to try a few things.
+Select Calibrate… Solve to begin the calibration process. Watch as a bunch of debug text and numbers scroll by. The final RMS error reported should hopefully be some value less than 1.0.
+
+Keep in mind the "important" note above regarding non-flat projection surfaces! You will need to calibrate each projector against a non-flat surface first, to recover focal length and principal point, before any subsequent calibration against planar scenes. Also, note that the projector section in the .xml file features a "lockIntrinsics" field which when true, ensures that calibration leaves focal length and principal point unchanged during calibration.
 
 When the calibration solve is completed select File… Save. You are done with calibration.
 
@@ -110,8 +115,8 @@ A full description of how the calibration works is beyond the sope of this READM
 
 Briefly:
 
-- A 'user view' off-screen render is peformed. This the 'target' or 'desired' visual the user should see after projection  onto a possibly non-flat surface. When rendering 3D virtual objects, this will likely require the user's head position.
-- A graphics projection matrix is assembled for each projector in the ensemble. This uses the projector intrinsics, and, because the principle point of the projector is most likely not at the center of the projected image, uses an 'off-center' or 'oblique' style perspective projection matrix. 
+- A 'user view' off-screen render is peformed. This is the 'target' or 'desired' visual the user should see after projection  onto a possibly non-flat surface. When rendering 3D virtual objects, this will likely require the user's head position.
+- A graphics projection matrix is assembled for each projector in the ensemble. This uses the projector intrinsics, and, because the principal point of the projector is most likely not at the center of the projected image, uses an 'off-center' or 'oblique' style perspective projection matrix. 
 - The projector's projection matrix is combined with calibrated projector and depth camera pose information to create a transformation matrix mapping a 3D point in the coordinate frame of a given depth camera to a 3D point in the projector's view volume.
 - A second transformation matrix is assembled, mapping a point in a given depth camera's coordinate system to the user's view volume. This is used to compute the texture coordinates into the 'user view' (above) associated with each 3D depth camera point.
 - Vertex and geometry shaders use the above transformations to render a depth image to transformed vertices and texture coordinates for a given projector and a given depth camera. Essentially, the shaders render the receiving surface of the projected light, with a texture that is calcuated to match the 'user view' from the user's point of view, as projected by the projector.

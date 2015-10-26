@@ -387,10 +387,12 @@ namespace RoomAliveToolkit
                     for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         var pointF = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
+                        float meanDepthMeters = meanImage[x, y] / 1000.0f;
+
                         Float3 worldPoint;
-                        worldPoint.x = pointF.X * meanImage[x, y];
-                        worldPoint.y = pointF.Y * meanImage[x, y];
-                        worldPoint.z = meanImage[x, y];
+                        worldPoint.x = pointF.X * meanDepthMeters;
+                        worldPoint.y = pointF.Y * meanDepthMeters;
+                        worldPoint.z = meanDepthMeters;
                         world[x, y] = worldPoint;
                     }
                 SaveToPly(cameraDirectory + "/mean.ply", world);

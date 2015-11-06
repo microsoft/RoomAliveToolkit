@@ -46,5 +46,8 @@
     <FxCompile Include="DepthAndProjectiveTextureVS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
+    <FxCompile Include="DepthMapsVS.hlsl" />
+    <FxCompile Include="DepthMapsGS.hlsl" />
+    <FxCompile Include="DepthMapsPS.hlsl" />
   </ItemGroup>
 </Project>

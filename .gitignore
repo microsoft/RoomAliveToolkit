@@ -194,3 +194,10 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+/ProCamCalibration/CalibrateEnsemble/Content/DepthMapsVS.cso
+/ProCamCalibration/CalibrateEnsemble/Content/DepthMapsPS.cso
+/ProCamCalibration/CalibrateEnsemble/Content/DepthMapsGS.cso
+/ProCamCalibration/ProjectionMappingSample/Content/DepthAndProjectiveTextureVS.cso
+/ProCamCalibration/ProjectionMappingSample/Content/RadialWobblePS.cso
+/ProCamCalibration/Shaders/Kinect2GS2listing.txt
+/ProCamCalibration/Shaders/Kinect2VS2listing.txt

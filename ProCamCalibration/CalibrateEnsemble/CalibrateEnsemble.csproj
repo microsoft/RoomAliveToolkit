@@ -109,6 +109,7 @@
     <Compile Include="ConsoleTextBox.Designer.cs">
       <DependentUpon>ConsoleTextBox.cs</DependentUpon>
     </Compile>
+    <Compile Include="DepthMapsShader.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -152,6 +153,18 @@
     </Content>
     <Content Include="..\x64\Debug\DepthAndColorVS.cso">
       <Link>Content\DepthAndColorVS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\DepthMapsGS.cso">
+      <Link>Content\DepthMapsGS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\DepthMapsPS.cso">
+      <Link>Content\DepthMapsPS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\DepthMapsVS.cso">
+      <Link>Content\DepthMapsVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="App.config" />

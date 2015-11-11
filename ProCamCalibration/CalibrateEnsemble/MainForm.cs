@@ -52,7 +52,7 @@ namespace RoomAliveToolkit
 
             // When using DeviceCreationFlags.Debug on Windows 10, ensure that "Graphics Tools" are installed via Settings/System/Apps & features/Manage optional features.
             // Also, when debugging in VS, "Enable native code debugging" must be selected on the project.
-            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.None, swapChainDesc, out device, out swapChain);
+            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, swapChainDesc, out device, out swapChain);
 
             // render target
             renderTarget = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
@@ -134,6 +134,9 @@ namespace RoomAliveToolkit
                 new InputElement("SV_POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
             });
 
+            // TODO: should be created/recreated when ensemble is loaded since depends on number of projectors
+            depthMapsShader = new DepthMapsShader(device);
+
             manipulator = new Manipulator(videoPanel1);
 
             // disable most menu items when no file is loaded
@@ -153,6 +156,7 @@ namespace RoomAliveToolkit
                 LoadEnsemble();
             }
 
+            // TODO: sanity check these?
             Width = Properties.Settings.Default.FormWidth;
             Height = Properties.Settings.Default.FormHeight;
             splitContainer1.SplitterDistance = Properties.Settings.Default.SplitterDistance;
@@ -176,9 +180,9 @@ namespace RoomAliveToolkit
         SharpDX.Direct3D11.Buffer constantBuffer;
         Manipulator manipulator;
 
+        DepthMapsShader depthMapsShader;
 
-
-        class CameraDeviceResource : IDisposable
+        public class CameraDeviceResource : IDisposable
         {
             // encapsulates d3d resources for a camera
             public CameraDeviceResource(SharpDX.Direct3D11.Device device, ProjectorCameraEnsemble.Camera camera, Object renderLock, string directory)
@@ -327,7 +331,7 @@ namespace RoomAliveToolkit
             public ShaderResourceView colorImageTextureRV;
             public Texture2D colorImageStagingTexture;
             public SharpDX.Direct3D11.Buffer vertexBuffer;
-            VertexBufferBinding vertexBufferBinding;
+            public VertexBufferBinding vertexBufferBinding;
             ProjectorCameraEnsemble.Camera camera;
             public bool renderEnabled = true;
 
@@ -534,6 +538,10 @@ namespace RoomAliveToolkit
 
                     var deviceContext = device.ImmediateContext;
 
+
+                    //depthMapsShader.Render(deviceContext, ensemble, cameraDeviceResources);
+
+
                     deviceContext.InputAssembler.InputLayout = vertexInputLayout;
                     deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
                     deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
@@ -566,6 +574,8 @@ namespace RoomAliveToolkit
 
                                     SetConstants(deviceContext, camera.calibration, worldViewProjection);
                                     cameraDeviceResources[camera].Render(deviceContext);
+
+
                                 }
                         }
 
@@ -903,7 +913,14 @@ namespace RoomAliveToolkit
                     depthStencilView.Dispose();
                     depthStencil.Dispose();
 
-                    swapChain.ResizeBuffers(1, videoPanel1.Width, videoPanel1.Height, Format.Unknown, SwapChainFlags.AllowModeSwitch);
+                    int newWidth = videoPanel1.Width;
+                    int newHeight = videoPanel1.Height;
+                    if (newWidth < 8)
+                        newWidth = 8;
+                    if (newHeight < 8)
+                        newHeight = 8;
+
+                    swapChain.ResizeBuffers(1, newWidth, newHeight, Format.Unknown, SwapChainFlags.AllowModeSwitch);
 
                     renderTarget = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
                     renderTargetView = new RenderTargetView(device, renderTarget);
@@ -911,8 +928,8 @@ namespace RoomAliveToolkit
                     // depth buffer
                     var depthBufferDesc = new Texture2DDescription()
                     {
-                        Width = videoPanel1.Width,
-                        Height = videoPanel1.Height,
+                        Width = newWidth,
+                        Height = newHeight,
                         MipLevels = 1,
                         ArraySize = 1,
                         Format = Format.D32_Float, // necessary?
@@ -925,7 +942,7 @@ namespace RoomAliveToolkit
                     depthStencilView = new DepthStencilView(device, depthStencil);
 
                     // viewport
-                    viewport = new Viewport(0, 0, videoPanel1.Width, videoPanel1.Height, 0f, 1f);
+                    viewport = new Viewport(0, 0, newWidth, newHeight, 0f, 1f);
                     manipulator.Viewport = viewport;
 
                     // in the case of perspective projection, change projection to follow change in aspect

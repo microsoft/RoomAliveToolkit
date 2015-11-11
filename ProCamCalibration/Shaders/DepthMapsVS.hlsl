@@ -1,4 +1,4 @@
-Texture2D<float> depthTexture : register(t0);
+Texture2D<uint> depthTexture : register(t0);
 
 struct VSInput
 {

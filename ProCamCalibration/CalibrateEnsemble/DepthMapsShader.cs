@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using SharpDX;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
@@ -24,7 +25,6 @@ namespace RoomAliveToolkit
                 Height = 768,
                 MipLevels = 1,
                 ArraySize = 3,
-                //Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm,
                 Format = Format.R32_Float,
                 SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
                 Usage = ResourceUsage.Default,
@@ -104,10 +104,14 @@ namespace RoomAliveToolkit
                 new InputElement("SV_POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
             });
 
+            // viewport
+            viewport = new Viewport(0, 0, 1024, 768, 0f, 1f);
+
         }
 
 
         InputLayout vertexInputLayout;
+        Viewport viewport;
 
         // protip: compile shader with /Fc; output gives exact layout
         // hlsl matrices are stored column major
@@ -116,25 +120,63 @@ namespace RoomAliveToolkit
         [StructLayout(LayoutKind.Explicit, Size = ConstantBuffer.size)]
         unsafe struct ConstantBuffer
         {
-            public const int size = 16*16*4; // TODO: check this
-
+            public const int size = 16*16*4;
             [FieldOffset(0)]
-            public fixed float projection[16*16];
+            public fixed float projection[16*16]; // 16 4x4 matrices
         };
 
-
-        public unsafe void SetConstants(DeviceContext deviceContext, RoomAliveToolkit.Kinect2Calibration kinect2Calibration, SharpDX.Matrix projection)
+        // extension?
+        SharpDX.Matrix ToSharpDX(RoomAliveToolkit.Matrix input)
         {
-            // hlsl matrices are default column order
+            var output = new SharpDX.Matrix();
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    output[i, j] = (float)input[i, j];
+            return output;
+        }
+
+
+        public unsafe void SetConstants(DeviceContext deviceContext, ProjectorCameraEnsemble.Camera camera, List<ProjectorCameraEnsemble.Projector> projectors)
+        {
             var constants = new ConstantBuffer();
 
-            for (int i = 0, r = 0; r < 3; r++)
+            var depthCameraToWorld = ToSharpDX(camera.pose);
+            depthCameraToWorld.Transpose();
+
+            int i = 0;
+            foreach (var projector in projectors)
+            {
+                var worldToProjector = ToSharpDX(projector.pose);
+                worldToProjector.Invert();
+                worldToProjector.Transpose();
+
+                var cameraMatrix = projector.cameraMatrix;
+                float fx = (float)cameraMatrix[0, 0];
+                float fy = (float)cameraMatrix[1, 1];
+                float cx = (float)cameraMatrix[0, 2];
+                float cy = (float)cameraMatrix[1, 2];
+
+                float near = 0.1f;
+                float far = 100.0f;
+
+                float w = projector.width;
+                float h = projector.height;
+
+                var projectorProjection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+                projectorProjection.Transpose();
+
+                var projection = new SharpDX.Matrix();
+                projection = depthCameraToWorld * worldToProjector * projectorProjection;
+
+                // hlsl matrices are default column order
                 for (int col = 0; col < 4; col++)
                     for (int row = 0; row < 4; row++)
-                    {
-                        constants.projection[i] = projection[row, col];
-                        i++;
-                    }
+                        constants.projection[i++] = projection[row, col];
+            }
+
+            // check support for rendertarget arrays
+            // check ps output semantic
+            // diagnostics work with texture arrays?
 
             DataStream dataStream;
             deviceContext.MapSubresource(constantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
@@ -142,22 +184,36 @@ namespace RoomAliveToolkit
             deviceContext.UnmapSubresource(constantBuffer, 0);
         }
 
-        //public void Render(DeviceContext deviceContext, ShaderResourceView depthImageTextureRV, SharpDX.Direct3D11.Buffer vertexBuffer, RenderTargetView renderTargetView, DepthStencilView depthStencilView, Viewport viewport)
-        public void Render(DeviceContext deviceContext, ShaderResourceView depthImageTextureRV, SharpDX.Direct3D11.Buffer vertexBuffer, Viewport viewport)
+        public void Render(DeviceContext deviceContext, ProjectorCameraEnsemble ensemble, Dictionary<ProjectorCameraEnsemble.Camera, MainForm.CameraDeviceResource> cameraDeviceResources)
         {
+            // render to array of projector render targets
+
             deviceContext.InputAssembler.InputLayout = vertexInputLayout;
             deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
-            deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(vertexBuffer, 16, 0)); // bytes per vertex
             deviceContext.Rasterizer.State = rasterizerState;
             deviceContext.Rasterizer.SetViewport(viewport);
             deviceContext.VertexShader.Set(vertexShader);
-            deviceContext.VertexShader.SetShaderResource(0, depthImageTextureRV);
             deviceContext.GeometryShader.Set(geometryShader);
             deviceContext.GeometryShader.SetConstantBuffer(0, constantBuffer);
             deviceContext.PixelShader.Set(pixelShader);
+            deviceContext.ClearDepthStencilView(depthMapsDepthStencilVuew, DepthStencilClearFlags.Depth, 1, 0);
+            deviceContext.ClearRenderTargetView(depthMapsRenderTargetView, Color.Black);
             deviceContext.OutputMerger.SetTargets(depthMapsDepthStencilVuew, depthMapsRenderTargetView);
             deviceContext.OutputMerger.DepthStencilState = depthStencilState;
-            deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
+
+            foreach (var camera in ensemble.cameras)
+            {
+                if (cameraDeviceResources.ContainsKey(camera))
+                    if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
+                    {
+                        // set projection matrices mapping depth camera to each projector
+                        SetConstants(deviceContext, camera, ensemble.projectors);
+
+                        deviceContext.InputAssembler.SetVertexBuffers(0, cameraDeviceResources[camera].vertexBufferBinding);
+                        deviceContext.VertexShader.SetShaderResource(0, cameraDeviceResources[camera].depthImageTextureRV);
+                        deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
+                    }
+            }
         }
 
         RenderTargetView depthMapsRenderTargetView;

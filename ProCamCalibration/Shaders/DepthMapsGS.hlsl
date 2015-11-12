@@ -17,7 +17,7 @@ cbuffer constants : register(b0)
 	matrix projection[16];
 }
 
-[maxvertexcount(3)]
+[maxvertexcount(9)]
 void main(triangle GSInput points[3], inout TriangleStream< GSOutput > triangles)
 {
 	// test the triangle; avoid dynamic branching
@@ -45,7 +45,6 @@ void main(triangle GSInput points[3], inout TriangleStream< GSOutput > triangles
 			output.pos = pos * valid;
 			output.depth = points[vertex].depth;
 			output.renderTargetIndex = r;
-
 			triangles.Append(output);
 		}
 	}

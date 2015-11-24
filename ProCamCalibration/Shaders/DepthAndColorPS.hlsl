@@ -3,12 +3,12 @@ SamplerState colorSampler : register(s0);
 
 struct PSInput
 {
-	float4 pos : SV_POSITION;
+	float4 pos : SV_Position;
 	float2 tex : TEXCOORD0;
-	float depth : MYSEMANTIC;
+	//float depth : MYSEMANTIC;
 };
 
-float4 main(PSInput input) : SV_TARGET0
+float4 main(PSInput input) : SV_Target0
 {
 	return colorTexture.Sample(colorSampler, input.tex);
 }

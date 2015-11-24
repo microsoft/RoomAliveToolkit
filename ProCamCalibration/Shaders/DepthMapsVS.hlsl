@@ -14,12 +14,18 @@ struct VSOutput
 // Input vertices are setup so that xy are the entries of the table 
 // returned by GetDepthFrameToCameraSpaceTable, and zw are the (integer)
 // depth image coordinates.
-VSOutput main(VSInput input)
+
+// TODO : try calculating zw from vertexID?
+
+VSOutput main(VSInput input, uint vertexID : SV_VertexID)
 {
 	VSOutput output;
 
+	int whichVertex = vertexID % 6;
+
 	// depth
 	// vertex buffer is configured so that zw are the integer depth image coords for this vertex
+
 	float depth = depthTexture.Load(int3(input.pos.zw, 0)) / 1000.0; // m
 
     // depth camera coords

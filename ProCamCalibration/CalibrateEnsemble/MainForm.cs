@@ -131,7 +131,7 @@ namespace RoomAliveToolkit
             // vertex layout is the same for all cameras
             vertexInputLayout = new InputLayout(device, shaderByteCode.Data, new[]
             {
-                new InputElement("SV_POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
+                new InputElement("test", 0, Format.R32G32B32A32_Float, 0, 0),
             });
 
             // TODO: should be created/recreated when ensemble is loaded since depends on number of projectors
@@ -246,10 +246,10 @@ namespace RoomAliveToolkit
                 Int3[] quadOffsets = new Int3[]
                 {
                     new Int3(0, 0, 0),  
-                    new Int3(1, 0, 0),  
                     new Int3(0, 1, 0),  
                     new Int3(1, 0, 0),  
                     new Int3(1, 1, 0),  
+                    new Int3(1, 0, 0),  
                     new Int3(0, 1, 0),  
                 };
 
@@ -550,7 +550,8 @@ namespace RoomAliveToolkit
                     deviceContext.Rasterizer.SetViewport(viewport);
                     deviceContext.VertexShader.Set(depthAndColorVS2);
                     deviceContext.VertexShader.SetConstantBuffer(0, constantBuffer);
-                    deviceContext.GeometryShader.Set(depthAndColorGS2);
+                    //deviceContext.GeometryShader.Set(depthAndColorGS2);
+                    deviceContext.GeometryShader.Set(null);
                     deviceContext.PixelShader.Set(depthAndColorPS2);
                     deviceContext.PixelShader.SetSampler(0, colorSamplerState);
                     deviceContext.ClearRenderTargetView(renderTargetView, Color4.Black);

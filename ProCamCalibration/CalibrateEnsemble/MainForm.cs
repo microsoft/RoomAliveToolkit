@@ -207,6 +207,26 @@ namespace RoomAliveToolkit
                 depthImageTexture = new Texture2D(device, depthImageTextureDesc);
                 depthImageTextureRV = new ShaderResourceView(device, depthImageTexture);
 
+
+                // Kinect depth image
+                var distortionTableTextureDesc = new Texture2DDescription()
+                {
+                    Width = Kinect2Calibration.depthImageWidth,
+                    Height = Kinect2Calibration.depthImageHeight,
+                    MipLevels = 1,
+                    ArraySize = 1,
+                    Format = SharpDX.DXGI.Format.R32G32_Float,
+                    SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
+                    Usage = ResourceUsage.Dynamic,
+                    BindFlags = BindFlags.ShaderResource,
+                    CpuAccessFlags = CpuAccessFlags.Write,
+                };
+                distortionTableTexture = new Texture2D(device, distortionTableTextureDesc);
+                distortionTableTextureRV = new ShaderResourceView(device, distortionTableTexture);
+
+
+
+
                 // Kinect color image
                 var colorImageStagingTextureDesc = new Texture2DDescription()
                 {
@@ -285,6 +305,25 @@ namespace RoomAliveToolkit
 
                 stream.Dispose();
 
+                // 
+
+                var tableData = new float[Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 2];
+                int ii = 0;
+                for (int y = 0; y < Kinect2Calibration.depthImageHeight; y++)
+                    for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
+                    {
+                        var point = table[Kinect2Calibration.depthImageWidth * y + x];
+                        tableData[ii++] = point.X;
+                        tableData[ii++] = point.Y;
+                    }
+
+
+                DataStream dataStream;
+                device.ImmediateContext.MapSubresource(distortionTableTexture, 0, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
+                dataStream.WriteRange(tableData);
+                device.ImmediateContext.UnmapSubresource(distortionTableTexture, 0);
+
+
 
                 if (File.Exists(directory + "/camera" + camera.name + "/color.tiff")) // FIX: this assumes that mean.tiff is exists (very likely)
                 {
@@ -332,6 +371,8 @@ namespace RoomAliveToolkit
             public Texture2D colorImageStagingTexture;
             public SharpDX.Direct3D11.Buffer vertexBuffer;
             public VertexBufferBinding vertexBufferBinding;
+            public Texture2D distortionTableTexture;
+            public ShaderResourceView distortionTableTextureRV;
             ProjectorCameraEnsemble.Camera camera;
             public bool renderEnabled = true;
 
@@ -397,8 +438,9 @@ namespace RoomAliveToolkit
 
             public void Render(DeviceContext deviceContext)
             {
-                deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
+                //deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
                 deviceContext.VertexShader.SetShaderResource(0, depthImageTextureRV);
+                deviceContext.VertexShader.SetShaderResource(1, distortionTableTextureRV);
                 deviceContext.PixelShader.SetShaderResource(0, colorImageTextureRV);
                 deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
             }
@@ -526,7 +568,7 @@ namespace RoomAliveToolkit
         }
 
         Object renderLock = new Object();
-
+        FrameRate frameRate = new FrameRate(2000);
 
         void RenderLoop()
         {
@@ -580,7 +622,10 @@ namespace RoomAliveToolkit
                                 }
                         }
 
-                    swapChain.Present(1, PresentFlags.None);
+                    swapChain.Present(0, PresentFlags.None);
+
+                    frameRate.Tick();
+                    frameRate.PrintMessage();
                 }
             }
         }

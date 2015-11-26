@@ -110,6 +110,7 @@
       <DependentUpon>ConsoleTextBox.cs</DependentUpon>
     </Compile>
     <Compile Include="DepthMapsShader.cs" />
+    <Compile Include="FrameRate.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

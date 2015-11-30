@@ -49,5 +49,6 @@
     <FxCompile Include="DepthMapsVS.hlsl" />
     <FxCompile Include="DepthMapsGS.hlsl" />
     <FxCompile Include="DepthMapsPS.hlsl" />
+    <FxCompile Include="DepthCS.hlsl" />
   </ItemGroup>
 </Project>

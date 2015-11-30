@@ -5,7 +5,6 @@ struct PSInput
 {
 	float4 pos : SV_Position;
 	float2 tex : TEXCOORD0;
-	//float depth : MYSEMANTIC;
 };
 
 float4 main(PSInput input) : SV_Target0

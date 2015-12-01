@@ -209,7 +209,7 @@ namespace RoomAliveToolkit
                         // set projection matrices mapping depth camera to each projector
                         SetConstants(deviceContext, camera, ensemble.projectors);
 
-                        deviceContext.InputAssembler.SetVertexBuffers(0, cameraDeviceResources[camera].vertexBufferBinding);
+                        //deviceContext.InputAssembler.SetVertexBuffers(0, cameraDeviceResources[camera].vertexBufferBinding);
                         deviceContext.VertexShader.SetShaderResource(0, cameraDeviceResources[camera].depthImageTextureRV);
                         deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
                     }

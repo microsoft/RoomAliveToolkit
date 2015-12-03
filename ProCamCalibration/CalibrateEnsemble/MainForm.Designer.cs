@@ -47,6 +47,8 @@
             this.calibrateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.acquireToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.solveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.acquireDepthAndColorOnlyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.liveViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
@@ -56,8 +58,10 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.videoPanel1 = new RoomAliveToolkit.VideoPanel();
             this.consoleTextBox1 = new RoomAliveToolkit.ConsoleTextBox();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.acquireDepthAndColorOnlyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.solveStepsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.decodeGrayCodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.calibrateProjectorGroupsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.optimizePoseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -199,7 +203,8 @@
             this.acquireToolStripMenuItem,
             this.solveToolStripMenuItem,
             this.toolStripSeparator5,
-            this.acquireDepthAndColorOnlyToolStripMenuItem});
+            this.acquireDepthAndColorOnlyToolStripMenuItem,
+            this.solveStepsToolStripMenuItem});
             this.calibrateToolStripMenuItem.Name = "calibrateToolStripMenuItem";
             this.calibrateToolStripMenuItem.Size = new System.Drawing.Size(66, 20);
             this.calibrateToolStripMenuItem.Text = "Calibrate";
@@ -217,6 +222,18 @@
             this.solveToolStripMenuItem.Size = new System.Drawing.Size(233, 22);
             this.solveToolStripMenuItem.Text = "Solve";
             this.solveToolStripMenuItem.Click += new System.EventHandler(this.solveToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(230, 6);
+            // 
+            // acquireDepthAndColorOnlyToolStripMenuItem
+            // 
+            this.acquireDepthAndColorOnlyToolStripMenuItem.Name = "acquireDepthAndColorOnlyToolStripMenuItem";
+            this.acquireDepthAndColorOnlyToolStripMenuItem.Size = new System.Drawing.Size(233, 22);
+            this.acquireDepthAndColorOnlyToolStripMenuItem.Text = "Acquire Depth and Color Only";
+            this.acquireDepthAndColorOnlyToolStripMenuItem.Click += new System.EventHandler(this.acquireDepthAndColorOnlyToolStripMenuItem_Click);
             // 
             // renderToolStripMenuItem
             // 
@@ -296,17 +313,36 @@
             this.consoleTextBox1.Size = new System.Drawing.Size(489, 723);
             this.consoleTextBox1.TabIndex = 0;
             // 
-            // toolStripSeparator5
+            // solveStepsToolStripMenuItem
             // 
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(230, 6);
+            this.solveStepsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.decodeGrayCodesToolStripMenuItem,
+            this.calibrateProjectorGroupsToolStripMenuItem,
+            this.optimizePoseToolStripMenuItem});
+            this.solveStepsToolStripMenuItem.Name = "solveStepsToolStripMenuItem";
+            this.solveStepsToolStripMenuItem.Size = new System.Drawing.Size(233, 22);
+            this.solveStepsToolStripMenuItem.Text = "Solve Steps";
             // 
-            // acquireDepthAndColorOnlyToolStripMenuItem
+            // decodeGrayCodesToolStripMenuItem
             // 
-            this.acquireDepthAndColorOnlyToolStripMenuItem.Name = "acquireDepthAndColorOnlyToolStripMenuItem";
-            this.acquireDepthAndColorOnlyToolStripMenuItem.Size = new System.Drawing.Size(233, 22);
-            this.acquireDepthAndColorOnlyToolStripMenuItem.Text = "Acquire Depth and Color Only";
-            this.acquireDepthAndColorOnlyToolStripMenuItem.Click += new System.EventHandler(this.acquireDepthAndColorOnlyToolStripMenuItem_Click);
+            this.decodeGrayCodesToolStripMenuItem.Name = "decodeGrayCodesToolStripMenuItem";
+            this.decodeGrayCodesToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.decodeGrayCodesToolStripMenuItem.Text = "Decode Gray Code Images";
+            this.decodeGrayCodesToolStripMenuItem.Click += new System.EventHandler(this.decodeGrayCodesToolStripMenuItem_Click);
+            // 
+            // calibrateProjectorGroupsToolStripMenuItem
+            // 
+            this.calibrateProjectorGroupsToolStripMenuItem.Name = "calibrateProjectorGroupsToolStripMenuItem";
+            this.calibrateProjectorGroupsToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.calibrateProjectorGroupsToolStripMenuItem.Text = "Calibrate Projector Groups";
+            this.calibrateProjectorGroupsToolStripMenuItem.Click += new System.EventHandler(this.calibrateProjectorGroupsToolStripMenuItem_Click);
+            // 
+            // optimizePoseToolStripMenuItem
+            // 
+            this.optimizePoseToolStripMenuItem.Name = "optimizePoseToolStripMenuItem";
+            this.optimizePoseToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.optimizePoseToolStripMenuItem.Text = "Optimize Pose";
+            this.optimizePoseToolStripMenuItem.Click += new System.EventHandler(this.optimizePoseToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -362,5 +398,9 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem acquireDepthAndColorOnlyToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem solveStepsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem decodeGrayCodesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem calibrateProjectorGroupsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem optimizePoseToolStripMenuItem;
     }
 }

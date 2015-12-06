@@ -387,10 +387,12 @@ namespace RoomAliveToolkit
                     for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         var pointF = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
+                        float meanDepthMeters = meanImage[x, y] / 1000.0f;
+
                         Float3 worldPoint;
-                        worldPoint.x = pointF.X * meanImage[x, y];
-                        worldPoint.y = pointF.Y * meanImage[x, y];
-                        worldPoint.z = meanImage[x, y];
+                        worldPoint.x = pointF.X * meanDepthMeters;
+                        worldPoint.y = pointF.Y * meanDepthMeters;
+                        worldPoint.z = meanDepthMeters;
                         world[x, y] = worldPoint;
                     }
                 SaveToPly(cameraDirectory + "/mean.ply", world);
@@ -1308,23 +1310,9 @@ namespace RoomAliveToolkit
             }
             public override string ToString()
             {
-                return String.Format("v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
+                return String.Format(CultureInfo.InvariantCulture, "v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
             }
         }
-
-        public class CultureInvariantStreamWriter : StreamWriter
-        {
-            public CultureInvariantStreamWriter(string path) : base(path) { }
-            public CultureInvariantStreamWriter(string path, bool append, Encoding encoding) : base(path, append, encoding) { }
-            public override IFormatProvider FormatProvider
-            {
-                get
-                {
-                    return CultureInfo.InvariantCulture;
-                }
-            }
-        }
-
 
         public void SaveToOBJ(string directory, string objPath)
         {
@@ -1345,8 +1333,8 @@ namespace RoomAliveToolkit
                 new System.Drawing.Point(0, 1),
             };
 
-            var streamWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".obj");
-            var mtlFileWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".mtl");
+            var streamWriter = new StreamWriter(objDirectory + "/" + objFilename + ".obj");
+            var mtlFileWriter = new StreamWriter(objDirectory + "/" + objFilename + ".mtl");
             streamWriter.WriteLine("mtllib " + objFilename + ".mtl");
             uint nextVertexIndex = 1;
             var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
@@ -1532,7 +1520,7 @@ namespace RoomAliveToolkit
 
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
-            using (var file = new CultureInvariantStreamWriter(filename, false, Encoding.ASCII))
+            using (var file = new StreamWriter(filename, false, Encoding.ASCII))
             {
                 // Write Header
                 file.WriteLine("ply");
@@ -1556,7 +1544,7 @@ namespace RoomAliveToolkit
                             file.WriteLine("0 0 0");
                             continue;
                         }
-                        file.WriteLine(xyz.x.ToString("0.000") + " " + xyz.y.ToString("0.000") + " " + xyz.z.ToString("0.000"));
+                        file.WriteLine(String.Format(CultureInfo.InvariantCulture, "{0:0.000} {1:0.000} {2:0.000}", xyz.x, xyz.y, xyz.z));
                     }
                 }
             }

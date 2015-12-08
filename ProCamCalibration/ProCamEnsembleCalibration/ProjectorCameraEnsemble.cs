@@ -653,7 +653,7 @@ namespace RoomAliveToolkit
                         }
                     }
 
-                    if (worldPoints.Count > 1000)
+                    if (worldPoints.Count > 5000)
                     {
                         var pointSet = new CalibrationPointSet();
                         pointSet.worldPoints = worldPoints;
@@ -666,6 +666,8 @@ namespace RoomAliveToolkit
 
             Console.WriteLine("elapsed time " + stopWatch.ElapsedMilliseconds);
 
+
+            //var random = new Random();
 
 
             // calibration
@@ -681,7 +683,7 @@ namespace RoomAliveToolkit
 
                 int numCompletedFits = 0;
 
-                for (int i = 0; (numCompletedFits < 4) && (i < 10); i++)
+                for (int i = 0; (numCompletedFits < 4) && (i < 40); i++)
                 {
                     Console.WriteLine("RANSAC iteration " + i);
 
@@ -756,6 +758,38 @@ namespace RoomAliveToolkit
                     {
                         Matrix R, t;
                         CameraMath.ExtrinsicsInit(cameraMatrix, distCoeffs, worldPointSubsets[ii], imagePointSubsets[ii], out R, out t);
+
+                        //// generate a random orienation
+                        //var sphere = Matrix.GaussianSample(3, 1);
+                        //sphere.Normalize();
+
+
+                        //var unitZ = Matrix.Zero(3, 1);
+                        //unitZ[2] = 1;
+
+
+
+
+                        //var quat = new Matrix(4, 1);
+                        //quat.RotFromTo2Quat(unitZ, sphere);
+                        //R = new Matrix(3, 3);
+                        //R.RotQuat2Matrix(quat);
+
+
+                        //t = Matrix.Zero(3, 1);
+
+
+
+
+
+                        R.RotEuler2Matrix(0, 0, Math.PI * ( ( random.NextDouble() - 1 )* 2 ) );
+
+                        //R.RotEuler2Matrix(0.01, 0.01, 0.01);
+
+                        //Console.WriteLine(R);
+
+                        t.Zero();
+
                         rotations.Add(CameraMath.RotationVectorFromRotationMatrix(R));
                         translations.Add(t);
                     }
@@ -801,7 +835,7 @@ namespace RoomAliveToolkit
                             double dy = pointSet.imagePoints[k].Y - v;
                             double thisError = Math.Sqrt((dx * dx) + (dy * dy));
 
-                            if (thisError < 2.0f) // TODO: how to set this?
+                            if (thisError < 4.0f) // TODO: how to set this?
                             {
                                 worldPointInlierSet.Add(pointSet.worldPoints[k]);
                                 imagePointInlierSet.Add(pointSet.imagePoints[k]);

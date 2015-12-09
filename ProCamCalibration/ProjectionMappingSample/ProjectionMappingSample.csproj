@@ -185,9 +185,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ProCamEnsembleCalibration\ProCamEnsembleCalibrationLib.csproj">
+    <ProjectReference Include="..\ProCamEnsembleCalibration\ProCamEnsemble.csproj">
       <Project>{d8a7fb2f-f8fd-4489-aa7b-82b57b12d6f1}</Project>
-      <Name>ProCamEnsembleCalibrationLib</Name>
+      <Name>ProCamEnsemble</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

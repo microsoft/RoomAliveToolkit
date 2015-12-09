@@ -7,9 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DepthAndColorGS.hlsl">
-      <Filter>Source Files</Filter>
-    </FxCompile>
     <FxCompile Include="DepthAndColorPS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>

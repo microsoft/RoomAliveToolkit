@@ -184,7 +184,7 @@ namespace RoomAliveToolkit
             deviceContext.UnmapSubresource(constantBuffer, 0);
         }
 
-        public void Render(DeviceContext deviceContext, ProjectorCameraEnsemble ensemble, Dictionary<ProjectorCameraEnsemble.Camera, MainForm.CameraDeviceResource> cameraDeviceResources)
+        public void Render(DeviceContext deviceContext, ProjectorCameraEnsemble ensemble, Dictionary<ProjectorCameraEnsemble.Camera, CameraDeviceResource> cameraDeviceResources)
         {
             // render to array of projector render targets
 

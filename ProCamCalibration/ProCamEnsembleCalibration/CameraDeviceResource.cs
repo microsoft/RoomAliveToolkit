@@ -255,15 +255,6 @@ namespace RoomAliveToolkit
             deviceContext.GenerateMips(colorImageTextureRV);
         }
 
-        public void Render(DeviceContext deviceContext)
-        {
-            deviceContext.VertexShader.SetShaderResource(0, depthImageTextureRV);
-            deviceContext.VertexShader.SetShaderResource(1, depthFrameToCameraSpaceTableTextureRV);
-            deviceContext.PixelShader.SetShaderResource(0, colorImageTextureRV);
-            int numVertices = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6;
-            deviceContext.DrawIndexed(numVertices, numVertices * cameraIndex, 0);
-        }
-
         bool live = false;
 
         public void StartLive()

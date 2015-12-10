@@ -4,13 +4,14 @@ The RoomAlive Toolkit calibrates multiple projectors and cameras to enable immer
 
 This document has a few things you should know about using the toolkit's projector/camera calibration, and gives a tutorial on how to calibrate one projector and Kinect sensor (AKA 'camera').
 
-
 # Prerequisites
 
 * Visual Studio 2015 Community Edition (or better)
 * Kinect for Windows v2 SDK
 
-The project uses SharpDX and Math.NET Numerics packages. These should be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
+The project uses SharpDX and Math.NET Numerics packages. These will be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
+
+The 'Shaders' project requires Visual C++. Note that in Visual Studio 2015, Visual C++ is not installed by default. You may be prompted to install the necessary components when building the 'Shaders' project of the RoomAlive Toolkit.
 
 # Tutorial: Calibrating One Camera and One Projector
 
@@ -18,9 +19,9 @@ We outline the procedure for calibrating one projector and one camera. While one
 
 ## Room Setup
 
-*Important*: The current release of the calibration tool does not address the case where the projection surface is flat (such as a bare wall). If the projection surface is flat, place some sizable objects, such as a couch, a few boxes, whatever you have handy, to create a non-flat projection surface. 
+Place the Kinect v2 sensor so that it views most of the projected image, and so that the projected image occupies most of the Kinect's viweable area. Precise alignment is not critical (that's part of the point of calibration, right?), but both the Kinect color camera and Kinect depth camera must observe a good portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
 
-Place the Kinect v2 sensor so that it views most of the projected image, and so that projector fills much of the camera's view. Precise alignment is not critical (that's part of the point of calibration), but both the Kinect color camera and Kinect depth camera must observe a good portion of the projected image in order for calibration to succeed. It may be helpful to run the Kinect SDK’s Color Basics sample to line things up.
+*Important*: By default, the calibration procedure will attempt to calculate projector focal length and principal point. This will succeed only if the projection surface is not flat! You must, at least once, calibrate with a non-flat surface to recover projector focal length and principal point. To create a non-flat projection surface, it may suffice to place some sizable objects, such as a couch, a few boxes, whatever you have on hand (yes, if this is your first calibration, you must do this!). In subsequent calibrations, if the projection surface is determined to be flat, the previously calculated focal length and principal point will be used.
 
 Configure your projector so that it is in ‘desktop front’ projection mode, and make sure Windows is set to ‘Extend’ its desktop to the projector. Best results will be obtained when the projector is driven at its native resolution. Verify that the projector is not performing any keystone correction. Take a moment to focus the projector. If the projector has a zoom adjustment ring, do not move it after calibration is performed. It is a good idea to set it to one extreme or another, so that later you will know if it has been changed.
 
@@ -44,6 +45,8 @@ Open calibration.xml with a text editor (Visual Studio is a good choice). Note t
 
 The one thing you will need to change is the ‘displayIndex’ value under the single projector. If there is only one main display and the projector attached to the PC, the projector displayIndex probably should be ‘1’ (the main display being ‘0’). To verify this, return to CalibrateEnsemble.exe and select Setup… Show Projector Server Connected Displays. This will open a window on all available displays showing the displayIndex value for each (note that these values may not match the values reported in the Display Settings dialog in Windows). Select Setup… Hide Projector Server Connected Displays when you have noted the displayIndex associated with the projector.
 
+*Important*: ProjectorServer and the calibration process is not High-DPI aware. If you find that the display showing the display index does not fill the entire projected display area, turn off DPI scaling (set to 100%), and try again.
+
 Change the displayIndex value (again, probably ‘1’) and save the file.
 
 ## Acquire Calibration Images
@@ -58,7 +61,9 @@ Once the acquisition has completed, take a moment to browse the directory with c
 
 ## Run the Calibration
 
-Select Calibrate… Solve to begin the calibration process. Watch as a bunch of debug text and numbers scroll by. The final RMS error reported should hopefully be some value less than 1.0. If it is much more than that, then something has gone wrong: recall that the calibration currently does not work with flat scenes. Consider adding more complexity to the scene such as a chair or a box. Verify that the projector and cameras are overlapping by running the Kinect SDK Color Basics sample and seeing that the color camera sees most if not all of the projected image. You may need to try a few things.
+Select Calibrate… Solve to begin the calibration process. Watch as a bunch of debug text and numbers scroll by. The final RMS error reported should hopefully be some value less than 1.0.
+
+Keep in mind the "important" note above regarding non-flat projection surfaces! You will need to calibrate each projector against a non-flat surface first, to recover focal length and principal point, before any subsequent calibration against planar scenes. Also, note that the projector section in the .xml file features a "lockIntrinsics" field which when true, ensures that calibration leaves focal length and principal point unchanged during calibration.
 
 When the calibration solve is completed select File… Save. You are done with calibration.
 
@@ -79,6 +84,7 @@ In Visual Studio, look at the Settings.settings file under the Properties folder
 - LocalHeadTrackingEnabled: If a local Kinect sensor is detected, the head position of nearest tracked body is used in rendering the user’s view. With ThreeDObjectEnabled this creates a viewpoint dependent rendering effect, where the object appears to hover in front of the user. If you have only one Kinect camera, a good practice is to perform calibration with the camera viewing the projection. Then, when running the sample, turn the camera in place 180 degrees to view the user (in this case LiveDepthEnabled should be set to false). You may need to tweak how the head position is translated in the code sample.
 - LiveDepthEnabled: The depth image used in projection mapping is updated in real time (KinectServer must be running on the host listed in calibration.xml), otherwise the static, pre-recorded depth data from the calibration procedure is used. If this option is enabled, you should be able to move objects in the scene and the projection mapping should keep up with those changes.
 - FullScreenEnabled: Opens the rendered graphics window full screen on the projectors specified in calibration.xml. When false, the windows are instead opened in smaller windows with the main UI. This can be useful if you are away from your projector.
+- DesktopDuplicationEnabled: Uses the Desktop Duplication API to copy the contents of some other window on the desktop as the user's view. This allows the use of any program to perform rendering; for example, Unity or Processing. The target window is determined by finding the window user the cursor, using win32's "WindowFromPoint" function.
 
 # Calibrating Mutiple Cameras and Multiple Projectors
 
@@ -92,6 +98,30 @@ To calibrate a multiple camera/multiple projector setup, keep the following in m
 - The frustums of the projectors and cameras must overlap enough so that the calibration procedure can infer the overall arrangement of all cameras and projectors. In the case where 3 projectors and 3 cameras are lined up in a row, for example, the center camera must observe some portion of the left and right projections, and some portion of the center projection must overlap with the left and right projections (furthermore, each of these overlapping regions must be not be planar). We use the term ‘ensemble’ to denote the set of cameras and projectors that are calibrated together. We refer to a projector and the set of cameras that can see some part of the projector’s image as a ‘projector group’. An ensemble is thus a set of projector groups that share cameras.
 - The first camera in the .xml is special in that it establishes the coordinate system for the ensemble. When creating a multi-camera .xml file from the user interface, the 4x4 pose matrix for the first camera is set to the identity. This places the first camera in a coordinate frame external to the ensemble. If you already have a global coordinate frame you favor, set the first camera’s pose matrix to its pose in this coordinate frame before running calibration. Calibration will not change it. The pose of the other cameras and projectors will be reported in the same coordinate frame. 
 - The projection mapping sample handles multiple projector and multiple camera configurations (again, only local rendering). The sample picks up the configuration from the .xml file, supplied as a command line argument.
+
+# How Does Calibration Work?
+
+A full description of how the calibration works is beyond the sope of this README, but, briefly:
+
+- During the Acquire phase of CalibrateEnsemble, each projector projects a series of Gray code patterns in turn. These are captured and saved by all Kinect color cameras. Gray code patterns are used to map from a given pixel coordinate in the Kinect color image to a pixel coordinate in the projector. All cameras observe the Gray code patterns in order to establish which cameras belong to a given 'projector group' (see above). Additionally, the depth image from each Kinect depth camera is saved.
+-  CalibrateEnsemble recovers Kinect camera calibration information. This is used to compute the precise 3D coordinate of a given point in the depth image, and to map this 3D point to color camera coordinates.
+-  At this point  CalibrateEnsemble has all the information it needs to perform its calibration, even if the cameras and projector are off or disconnected.
+- During the Solve phase of CalibrateEnsemble, for each camera in the projector group, points in the saved depth camera image are transformed to 3D points. The 2D color camera coordinate is computed via the saved Kinect calibration information. These color camera coordinates are then assocated with projector coordinates by way of the Gray code mapping. The end result is a set of 3D points for each depth camera in the group, and their associated 2D projector coordinates. Now we are ready to solve for calibration parameters.
+- Projector intrinsics (focal length, principle point) and camera extrinsics (depth camera pose, in the projector coordinate frame) are computed by minimizing the error in the projection of 3D points to projector points. Because this projection is nonlinear, a standard Levenberg-Marquardt optimization procedure is used. This is performed for each projector in turn.
+- The 'ensemble' necessarily includes cameras that belong to multiple projector groups. These cameras can be used to put all camera and projector poses in the coordinate frame of the depth camera of the first Kinect listed in the .xml file. This is done via successive matrix compositions.
+- The 'ensemble' can be thought of as a graph of projectors, where each projector is a node, and cameras that belong in more than one group establish an edge between projectors. The previous step of unifying the coordinate systems is done in a greedy fashion, with the consequence that there may be multiple possible estimates of a camera or projector's pose if this graph includes a cycle (consider a ring of projectors, or a 2x2 grid of projectors). To address this possible source of error, a final optimization is performed over all projectors, solving for a single pose for each projector and camera.
+
+# How Does Projection Mapping Work?
+
+Briefly:
+
+- A 'user view' off-screen render is peformed. This is the 'target' or 'desired' visual the user should see after projection  onto a possibly non-flat surface. When rendering 3D virtual objects, this will likely require the user's head position.
+- A graphics projection matrix is assembled for each projector in the ensemble. This uses the projector intrinsics, and, because the principal point of the projector is most likely not at the center of the projected image, uses an 'off-center' or 'oblique' style perspective projection matrix. 
+- The projector's projection matrix is combined with calibrated projector and depth camera pose information to create a transformation matrix mapping a 3D point in the coordinate frame of a given depth camera to a 3D point in the projector's view volume.
+- A second transformation matrix is assembled, mapping a point in a given depth camera's coordinate system to the user's view volume. This is used to compute the texture coordinates into the 'user view' (above) associated with each 3D depth camera point.
+- Vertex and geometry shaders use the above transformations to render a depth image to transformed vertices and texture coordinates for a given projector and a given depth camera. Essentially, the shaders render the receiving surface of the projected light, with a texture that is calcuated to match the 'user view' from the user's point of view, as projected by the projector.
+- A projector's final rendering is perfomed by rendering each Kinect depth image using the above shaders. This procedure is performed for all projectors in the ensemble. Note that in this process, the depth images may be updated every frame; this is possible because the calibration and projection mapping process is fundamentally 3D in nature.
+
 
 # More Online Resources
 

@@ -60,7 +60,7 @@ namespace RoomAliveToolkit
             kinectSensor.Open();
         }
 
-        CoordinateMappingExample cooordinateMappingExample;
+        //CoordinateMappingExample cooordinateMappingExample;
 
         void CoordinateMapper_CoordinateMappingChanged(object sender, CoordinateMappingChangedEventArgs e)
         {

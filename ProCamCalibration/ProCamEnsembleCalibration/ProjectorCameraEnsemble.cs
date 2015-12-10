@@ -6,6 +6,7 @@ using System.ServiceModel;
 using System.Text;
 using System.Xml;
 using System.Runtime.Serialization;
+using System.Globalization;
 
 namespace RoomAliveToolkit
 {
@@ -79,6 +80,8 @@ namespace RoomAliveToolkit
             public Matrix lensDistortion;
             [DataMember]
             public Matrix pose;
+            [DataMember]
+            public bool lockIntrinsics;
 
             public Dictionary<Camera, CalibrationPointSet> calibrationPointSets;
 
@@ -384,10 +387,12 @@ namespace RoomAliveToolkit
                     for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         var pointF = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
+                        float meanDepthMeters = meanImage[x, y] / 1000.0f;
+
                         Float3 worldPoint;
-                        worldPoint.x = pointF.X * meanImage[x, y];
-                        worldPoint.y = pointF.Y * meanImage[x, y];
-                        worldPoint.z = meanImage[x, y];
+                        worldPoint.x = pointF.X * meanDepthMeters;
+                        worldPoint.y = pointF.Y * meanDepthMeters;
+                        worldPoint.z = meanDepthMeters;
                         world[x, y] = worldPoint;
                     }
                 SaveToPly(cameraDirectory + "/mean.ply", world);
@@ -684,16 +689,20 @@ namespace RoomAliveToolkit
                     var worldPointSubsets = new List<List<Matrix>>();
                     var imagePointSubsets = new List<List<System.Drawing.PointF>>();
 
+                    bool foundNonplanarSubset = false;
                     foreach (var pointSet in projector.calibrationPointSets.Values)
                     {
                         var worldPointSubset = new List<Matrix>();
                         var imagePointSubset = new List<System.Drawing.PointF>();
 
-                        bool nonCoplanar = false;
+                        // try to find a nonplanar subset
+                        bool planar = true;
                         int nTries = 0;
-
-                        while (!nonCoplanar)
+                        while (planar && (nTries++ < 1000))
                         {
+                            worldPointSubset.Clear();
+                            imagePointSubset.Clear();
+
                             for (int j = 0; j < 100; j++)
                             {
                                 int k = random.Next(pointSet.worldPoints.Count);
@@ -701,91 +710,67 @@ namespace RoomAliveToolkit
                                 imagePointSubset.Add(pointSet.imagePoints[k]);
                             }
 
-                            // check that points are not coplanar
-                            Matrix X;
-                            double D;
-                            double ssdToPlane = PlaneFit(worldPointSubset, out X, out D);
-                            int numOutliers = 0;
-                            foreach (var point in worldPointSubset)
-                            {
-                                double distanceFromPlane = X.Dot(point) + D;
-                                if (Math.Abs(distanceFromPlane) > 0.1f)
-                                    numOutliers++;
-                            }
-                            nonCoplanar = (numOutliers > worldPointSubset.Count * 0.10f);
-                            if (!nonCoplanar)
-                            {
-                                Console.WriteLine("points are coplanar (try #{0})", nTries);
-                                worldPointSubset.Clear();
-                                imagePointSubset.Clear();
-                            }
-                            if (nTries++ > 1000)
-                            {
-                                throw new CalibrationFailedException("Unable to find noncoplanar points.");
-                                // consider moving this check up with variance check (when calibration point sets are formed)
-                            }
+                            // planar?
+                            Matrix Rplane, tplane, d;
+                            CameraMath.PlaneFit(worldPointSubset, out Rplane, out tplane, out d);
+                            //Console.WriteLine("planar : " + d[2] / d[1]);
+                            planar = (d[2] / d[1]) < 0.001f;
                         }
 
                         worldPointSubsets.Add(worldPointSubset);
                         imagePointSubsets.Add(imagePointSubset);
+
+                        // we can't initialize extrinsics yet, because we don't know which intrinsics we'll be using
+
+                        if (!planar)
+                            foundNonplanarSubset = true;
                     }
 
 
+                    // we do not optimize intrinsics if all the point sets are planar, or if the projector intrinsics are marked as locked
+                    bool fixIntrinsics = (!foundNonplanarSubset) || (projector.lockIntrinsics); // TODO: add option to lock intrinsics
+
+
+                    var rotations = new List<Matrix>();
+                    var translations = new List<Matrix>();
                     var cameraMatrix = new Matrix(3, 3);
-                    cameraMatrix[0, 0] = 1000; //fx TODO: can we instead init this from FOV?
-                    cameraMatrix[1, 1] = 1000; //fy
-                    cameraMatrix[0, 2] = projector.width / 2; //cx
-                    cameraMatrix[1, 2] = 0; // projector lens shift; note this assumes desktop projection mode
-                    cameraMatrix[2, 2] = 1;
-                    var distCoeffs = new RoomAliveToolkit.Matrix(2, 1);
-                    List<RoomAliveToolkit.Matrix> rotations = null;
-                    List<RoomAliveToolkit.Matrix> translations = null;
+                    var distCoeffs = new Matrix(2, 1);
+
+                    if (fixIntrinsics)
+                    {
+                        cameraMatrix.Copy(projector.cameraMatrix);
+                        distCoeffs.Copy(projector.lensDistortion);
+                    }
+                    else // nonplanar, so we can optimize intrinsics
+                    {
+                        cameraMatrix[0, 0] = 1000; //fx TODO: can we instead init this from FOV?
+                        cameraMatrix[1, 1] = 1000; //fy
+                        cameraMatrix[0, 2] = projector.width / 2; //cx
+                        cameraMatrix[1, 2] = 0; // projector lens shift; note this assumes desktop projection mode
+                        cameraMatrix[2, 2] = 1;
+                    }
 
 
-                    var error = CalibrateCamera(worldPointSubsets, imagePointSubsets, cameraMatrix, ref rotations, ref translations);
-                    Console.WriteLine("error = " + error);
-                    //Console.WriteLine("intrinsics = \n" + cameraMatrix);
+                    // init extrinsics
+                    for (int ii = 0; ii < worldPointSubsets.Count; ii++)
+                    {
+                        Matrix R, t;
+                        CameraMath.ExtrinsicsInit(cameraMatrix, distCoeffs, worldPointSubsets[ii], imagePointSubsets[ii], out R, out t);
+                        rotations.Add(CameraMath.RotationVectorFromRotationMatrix(R));
+                        translations.Add(t);
+                    }
+
+                    // initial RANSAC fit on subset of points
+                    double error;
+                    if (fixIntrinsics)
+                        error = CameraMath.CalibrateCameraExtrinsicsOnly(worldPointSubsets, imagePointSubsets, cameraMatrix, ref rotations, ref translations);
+                    else
+                        error = CameraMath.CalibrateCamera(worldPointSubsets, imagePointSubsets, cameraMatrix, ref rotations, ref translations);
+
+                    Console.WriteLine("error on subset = " + error);
 
 
-
-                    //// we differ from opencv's 'error' in that we do not distinguish between x and y.
-                    //// i.e. opencv uses the method below; this number would match if we used pointsInSum2*2 in the divisor.
-                    //// double check opencv's error
-                    //{
-                    //    double sumError2 = 0;
-                    //    int pointsInSum2 = 0;
-                    //    for (int ii = 0; ii < worldPointSubsets.Count; ii++)
-                    //    {
-                    //        var R = Orientation.Rodrigues(rotations[ii]);
-                    //        var t = translations[ii];
-                    //        var p = new Matrix(3, 1);
-
-                    //        var worldPointSet = worldPointSubsets[ii];
-                    //        var imagePointSet = imagePointSubsets[ii];
-
-                    //        for (int k = 0; k < worldPointSet.Count; k++)
-                    //        {
-                    //            p.Mult(R, worldPointSet[k]);
-                    //            p.Add(t);
-                    //            double u, v;
-                    //            Kinect2.Kinect2Calibration.Project(cameraMatrix, distCoeffs, p[0], p[1], p[2], out u, out v);
-
-                    //            double dx = imagePointSet[k].X - u;
-                    //            double dy = imagePointSet[k].Y - v;
-
-                    //            double thisError = dx * dx + dy * dy;
-                    //            sumError2 += thisError;
-                    //            pointsInSum2++;
-                    //        }
-                    //    }
-
-                    //    // opencv's error is rms but over both x and y combined
-
-                    //    Console.WriteLine("average projection error = " + Math.Sqrt(sumError2 / (float)(pointsInSum2)));
-                    //}
-
-
-                    // find inliers from overall dataset
+                    // RANSAC: find inliers from overall dataset
                     var worldPointInlierSets = new List<List<Matrix>>();
                     var imagePointInlierSets = new List<List<System.Drawing.PointF>>();
                     int setIndex = 0;
@@ -793,16 +778,16 @@ namespace RoomAliveToolkit
                     bool enoughInliers = true;
                     double sumError = 0;
                     int pointsInSum = 0;
+                    int totalInliers = 0;
+                    int totalPoints = 0;
                     foreach (var pointSet in projector.calibrationPointSets.Values)
                     {
                         var worldPointInlierSet = new List<Matrix>();
                         var imagePointInlierSet = new List<System.Drawing.PointF>();
 
-                        //var R = Vision.Orientation.Rodrigues(rotations[setIndex]);
-                        var R = RotationMatrixFromRotationVector(rotations[setIndex]);
+                        var R = CameraMath.RotationMatrixFromRotationVector(rotations[setIndex]);
                         var t = translations[setIndex];
                         var p = new Matrix(3, 1);
-
 
                         for (int k = 0; k < pointSet.worldPoints.Count; k++)
                         {
@@ -816,7 +801,7 @@ namespace RoomAliveToolkit
                             double dy = pointSet.imagePoints[k].Y - v;
                             double thisError = Math.Sqrt((dx * dx) + (dy * dy));
 
-                            if (thisError < 1.0f)
+                            if (thisError < 2.0f) // TODO: how to set this?
                             {
                                 worldPointInlierSet.Add(pointSet.worldPoints[k]);
                                 imagePointInlierSet.Add(pointSet.imagePoints[k]);
@@ -827,27 +812,36 @@ namespace RoomAliveToolkit
                         setIndex++;
 
                         // require that each view has a minimum number of inliers
-                        enoughInliers = enoughInliers && (worldPointInlierSet.Count > 1000);
+                        enoughInliers = enoughInliers && (worldPointInlierSet.Count > 500); // should be related to min number of points in set (above)
+
+                        totalPoints += pointSet.worldPoints.Count;
+                        totalInliers += worldPointInlierSet.Count;
 
                         worldPointInlierSets.Add(worldPointInlierSet);
                         imagePointInlierSets.Add(imagePointInlierSet);
-
                     }
+
+
+                    Console.WriteLine("{0}/{1} inliers", totalInliers, totalPoints);
 
                     // if number of inliers > some threshold (should be for each subset)
                     if (enoughInliers) // should this threshold be a function of the number of cameras, a percentage?
                     {
-                        var error2 = CalibrateCamera(worldPointInlierSets, imagePointInlierSets, cameraMatrix, ref rotations, ref translations);
+                        double error2;
+                        if (fixIntrinsics)
+                            error2 = CameraMath.CalibrateCameraExtrinsicsOnly(worldPointInlierSets, imagePointInlierSets, cameraMatrix, ref rotations, ref translations);
+                        else
+                            error2 = CameraMath.CalibrateCamera(worldPointInlierSets, imagePointInlierSets, cameraMatrix, ref rotations, ref translations);
 
                         Console.WriteLine("error with inliers = " + error2);
                         Console.Write("camera matrix = \n" + cameraMatrix);
 
                         numCompletedFits++;
 
-                        // if err < besterr save model (save rotation and translation to calibrationPointSets, cameraMatrix and distortion coeffs to projector)
-                        if (error < minError)
+                        // if reduced error save model (save rotation and translation to calibrationPointSets, cameraMatrix and distortion coeffs to projector)
+                        if (error2 < minError)
                         {
-                            minError = error;
+                            minError = error2;
                             projector.cameraMatrix = cameraMatrix;
                             projector.lensDistortion = distCoeffs;
                             setIndex = 0;
@@ -855,7 +849,7 @@ namespace RoomAliveToolkit
                             foreach (var pointSet in projector.calibrationPointSets.Values)
                             {
                                 // convert to 4x4 transform
-                                var R = RotationMatrixFromRotationVector(rotations[setIndex]);
+                                var R = CameraMath.RotationMatrixFromRotationVector(rotations[setIndex]);
                                 var t = translations[setIndex];
 
                                 var T = new Matrix(4, 4);
@@ -893,8 +887,66 @@ namespace RoomAliveToolkit
             }
 
             Console.WriteLine("elapsed time " + stopWatch.ElapsedMilliseconds);
+
+
+
+
+
+
+            //Console.WriteLine("x = [");
+            //for (int ii = 0; ii < imagePointSubsets[0].Count; ii++)
+            //    Console.WriteLine("{0} {1}", imagePointSubsets[0][ii].X, imagePointSubsets[0][ii].Y);
+            //Console.WriteLine("]';");
+            //Console.WriteLine("X = [");
+            //for (int ii = 0; ii < worldPointSubsets[0].Count; ii++)
+            //    Console.WriteLine("{0} {1} {2}", worldPointSubsets[0][ii][0], worldPointSubsets[0][ii][1], worldPointSubsets[0][ii][2]);
+            //Console.WriteLine("]';");
+            //Console.WriteLine("fc = [{0} {1}];", projector.cameraMatrix[0, 0], projector.cameraMatrix[1, 1]);
+            //Console.WriteLine("cc = [{0} {1}];", projector.cameraMatrix[0, 2], projector.cameraMatrix[1, 2]);
+
+            //Matrix thisR, thist;
+
+
+            //{
+            //    Matrix Rplane, tplane;
+            //    CameraMath.PlaneFit(worldPointSubsets[0], out Rplane, out tplane);
+
+            //    CameraMath.PlanarDLT(projector.cameraMatrix, projector.lensDistortion, worldPointSubsets[0], imagePointSubsets[0], Rplane, tplane, out thisR, out thist);
+            //    //Console.WriteLine("DLT---------");
+            //    //Console.WriteLine(thisR);
+            //    //Console.WriteLine(thist);
+
+            //}
+
+
+
+            //// if pattern is not planar, we can recover projector intrinsics
+
+
+            //List<RoomAliveToolkit.Matrix> rotations = null;
+            //List<RoomAliveToolkit.Matrix> translations = null;
+
+
+            //var error = CalibrateCamera(worldPointSubsets, imagePointSubsets, cameraMatrix, ref rotations, ref translations);
+            //Console.WriteLine("error = " + error);
+
+
+            // we check whether each view is planar, so that we can use the correct version of DLT
+
+            // the overall set may not be planar however, so we have to check the union of points
+
+
+
+
+            // if overall set is planar, leave intrinsics alone
+
+            // 
+
+
+
+
         }
-        
+
         public void UnifyPose()
         {
             // unify extrinsics
@@ -1003,8 +1055,7 @@ namespace RoomAliveToolkit
                             R[ii, jj] = T[ii, jj];
                     }
 
-                    //var r = Vision.Orientation.RotationVector(R);
-                    var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
+                    var r = CameraMath.RotationVectorFromRotationMatrix(R);
 
                     for (int ii = 0; ii < 3; ii++)
                         parameters[pi++] = r[ii];
@@ -1024,8 +1075,7 @@ namespace RoomAliveToolkit
                             R[ii, jj] = T[ii, jj];
                     }
 
-                    //var r = Vision.Orientation.RotationVector(R);
-                    var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
+                    var r = CameraMath.RotationVectorFromRotationMatrix(R);
 
                     for (int ii = 0; ii < 3; ii++)
                         parameters[pi++] = r[ii];
@@ -1056,8 +1106,7 @@ namespace RoomAliveToolkit
                     r[0] = p[pi++];
                     r[1] = p[pi++];
                     r[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
-                    var R = RotationMatrixFromRotationVector(r);
+                    var R = CameraMath.RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
                     t[0] = p[pi++];
@@ -1081,8 +1130,7 @@ namespace RoomAliveToolkit
                     r[0] = p[pi++];
                     r[1] = p[pi++];
                     r[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
-                    var R = RotationMatrixFromRotationVector(r);
+                    var R = CameraMath.RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
                     t[0] = p[pi++];
@@ -1184,8 +1232,7 @@ namespace RoomAliveToolkit
                     r[0] = parameters[pi++];
                     r[1] = parameters[pi++];
                     r[2] = parameters[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
-                    var R = RotationMatrixFromRotationVector(r);
+                    var R = CameraMath.RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
                     t[0] = parameters[pi++];
@@ -1209,8 +1256,7 @@ namespace RoomAliveToolkit
                     r[0] = parameters[pi++];
                     r[1] = parameters[pi++];
                     r[2] = parameters[pi++];
-                    //var R = Vision.Orientation.Rodrigues(r);
-                    var R = RotationMatrixFromRotationVector(r);
+                    var R = CameraMath.RotationMatrixFromRotationVector(r);
 
                     var t = new Matrix(3, 1);
                     t[0] = parameters[pi++];
@@ -1233,160 +1279,6 @@ namespace RoomAliveToolkit
 
         }
 
-        static double CalibrateCamera(List<List<Matrix>> worldPointSets, List<List<System.Drawing.PointF>> imagePointSets,
-            Matrix cameraMatrix, ref List<Matrix> rotations, ref List<Matrix> translations)
-        {
-            int nSets = worldPointSets.Count;
-            int nPoints = 0;
-
-            for (int i = 0; i < nSets; i++)
-                nPoints += worldPointSets[i].Count; // for later
-
-            var distCoeffs = Matrix.Zero(2, 1);
-
-
-            // if necessary run DLT on each point set to get initial rotation and translations
-            if (rotations == null)
-            {
-                rotations = new List<Matrix>();
-                translations = new List<Matrix>();
-
-                for (int i = 0; i < nSets; i++)
-                {
-                    Matrix R, t;
-                    CameraMath.DLT(cameraMatrix, distCoeffs, worldPointSets[i], imagePointSets[i], out R, out t);
-
-                    //var r = Vision.Orientation.RotationVector(R);
-                    var r = ProjectorCameraEnsemble.RotationVectorFromRotationMatrix(R);
-
-                    rotations.Add(r);
-                    translations.Add(t);
-                }
-            }
-
-            // Levenberg-Marquardt for camera matrix (ignore lens distortion for now)
-
-            // pack parameters into vector
-            // parameters: camera has f, cx, cy; each point set has rotation + translation (6)
-            int nParameters = 3 + 6 * nSets;
-            var parameters = new Matrix(nParameters, 1);
-
-            {
-                int pi = 0;
-                parameters[pi++] = cameraMatrix[0, 0]; // f
-                parameters[pi++] = cameraMatrix[0, 2]; // cx
-                parameters[pi++] = cameraMatrix[1, 2]; // cy
-                for (int i = 0; i < nSets; i++)
-                {
-                    parameters[pi++] = rotations[i][0];
-                    parameters[pi++] = rotations[i][1];
-                    parameters[pi++] = rotations[i][2];
-                    parameters[pi++] = translations[i][0];
-                    parameters[pi++] = translations[i][1];
-                    parameters[pi++] = translations[i][2];
-                }
-            }
-
-            // size of our error vector
-            int nValues = nPoints * 2; // each component (x,y) is a separate entry
-
-
-
-            LevenbergMarquardt.Function function = delegate(Matrix p)
-            {
-                var fvec = new Matrix(nValues, 1);
-
-                // unpack parameters
-                int pi = 0;
-                double f = p[pi++];
-                double cx = p[pi++];
-                double cy = p[pi++];
-
-                var K = Matrix.Identity(3, 3);
-                K[0, 0] = f;
-                K[1, 1] = f;
-                K[0, 2] = cx;
-                K[1, 2] = cy;
-
-                var d = Matrix.Zero(2, 1);
-
-                int fveci = 0;
-
-                for (int i = 0; i < nSets; i++)
-                {
-                    var rotation = new Matrix(3, 1);
-                    rotation[0] = p[pi++];
-                    rotation[1] = p[pi++];
-                    rotation[2] = p[pi++];
-                    //var R = Vision.Orientation.Rodrigues(rotation);
-                    var R = RotationMatrixFromRotationVector(rotation);
-
-                    var t = new Matrix(3, 1);
-                    t[0] = p[pi++];
-                    t[1] = p[pi++];
-                    t[2] = p[pi++];
-
-                    var worldPoints = worldPointSets[i];
-                    var imagePoints = imagePointSets[i];
-                    var x = new Matrix(3, 1);
-
-                    for (int j = 0; j < worldPoints.Count; j++)
-                    {
-                        // transform world point to local camera coordinates
-                        x.Mult(R, worldPoints[j]);
-                        x.Add(t);
-
-                        // fvec_i = y_i - f(x_i)
-                        double u, v;
-                        CameraMath.Project(K, d, x[0], x[1], x[2], out u, out v);
-
-                        var imagePoint = imagePoints[j];
-                        fvec[fveci++] = imagePoint.X - u;
-                        fvec[fveci++] = imagePoint.Y - v;
-                    }
-                }
-                return fvec;
-            };
-
-            // optimize
-            var calibrate = new LevenbergMarquardt(function);
-            calibrate.minimumReduction = 1.0e-4;
-            calibrate.Minimize(parameters);
-
-            //while (calibrate.State == LevenbergMarquardt.States.Running)
-            //{
-            //    var rmsError = calibrate.MinimizeOneStep(parameters);
-            //    //Console.WriteLine("rms error = " + rmsError);
-            //}
-            //for (int i = 0; i < nParameters; i++)
-            //    Console.WriteLine(parameters[i] + "\t");
-            //Console.WriteLine();
-
-            // unpack parameters
-            {
-                int pi = 0;
-                double f = parameters[pi++];
-                double cx = parameters[pi++];
-                double cy = parameters[pi++];
-                cameraMatrix[0, 0] = f;
-                cameraMatrix[1, 1] = f;
-                cameraMatrix[0, 2] = cx;
-                cameraMatrix[1, 2] = cy;
-
-                for (int i = 0; i < nSets; i++)
-                {
-                    rotations[i][0] = parameters[pi++];
-                    rotations[i][1] = parameters[pi++];
-                    rotations[i][2] = parameters[pi++];
-
-                    translations[i][0] = parameters[pi++];
-                    translations[i][1] = parameters[pi++];
-                    translations[i][2] = parameters[pi++];
-                }
-            }
-
-            return calibrate.RMSError;
-        }
 
         public static List<RoomAliveToolkit.Matrix> TransformPoints(RoomAliveToolkit.Matrix A, List<RoomAliveToolkit.Matrix> points)
         {
@@ -1418,21 +1310,12 @@ namespace RoomAliveToolkit
             }
             public override string ToString()
             {
-                return String.Format("v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
+                return String.Format(CultureInfo.InvariantCulture, "v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
             }
         }
 
         public void SaveToOBJ(string directory, string objPath)
         {
-            // force decimal point so standard programs like MeshLab can read this
-            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
-            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
-            {
-                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
-                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
-            }
-
             var objFilename = Path.GetFileNameWithoutExtension(objPath);
             var objDirectory = Path.GetDirectoryName(objPath);
 
@@ -1637,16 +1520,7 @@ namespace RoomAliveToolkit
 
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
-            // force decimal point so standard programs like MeshLab can read this
-            string CultureName = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-            var cultureInfo = new System.Globalization.CultureInfo(CultureName);
-            if (cultureInfo.NumberFormat.NumberDecimalSeparator != ".")
-            {
-                cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
-                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
-            }
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename, false, Encoding.ASCII))
+            using (var file = new StreamWriter(filename, false, Encoding.ASCII))
             {
                 // Write Header
                 file.WriteLine("ply");
@@ -1670,7 +1544,7 @@ namespace RoomAliveToolkit
                             file.WriteLine("0 0 0");
                             continue;
                         }
-                        file.WriteLine(xyz.x.ToString("0.000") + " " + xyz.y.ToString("0.000") + " " + xyz.z.ToString("0.000"));
+                        file.WriteLine(String.Format(CultureInfo.InvariantCulture, "{0:0.000} {1:0.000} {2:0.000}", xyz.x, xyz.y, xyz.z));
                     }
                 }
             }
@@ -1678,90 +1552,8 @@ namespace RoomAliveToolkit
         #endregion
 
 
-
-
-        public static Matrix RotationMatrixFromRotationVector(Matrix rotationVector)
-        {
-            double angle = rotationVector.Norm();
-            var axis = new SharpDX.Vector3((float)(rotationVector[0] / angle), (float)(rotationVector[1] / angle), (float)(rotationVector[2] / angle));
-
-            // Why the negative sign? SharpDX returns a post-multiply matrix. Instead of transposing to get the pre-multiply matrix we just invert the input rotation.
-            var sR = SharpDX.Matrix.RotationAxis(axis, -(float)angle); 
-
-            var R = new Matrix(3, 3);
-            for (int i = 0; i < 3; i++)
-                for (int j = 0; j < 3; j++)
-                    R[i, j] = sR[i, j];
-            return R;
-        }
-
-        public static Matrix RotationVectorFromRotationMatrix(Matrix R)
-        {
-            var sR = new SharpDX.Matrix();
-            for (int i = 0; i < 3; i++)
-                for (int j = 0; j < 3; j++)
-                    sR[i, j] = (float) R[i, j];
-            var q = SharpDX.Quaternion.RotationMatrix(sR);
-
-            // Why the negative sign? SharpDX assumes a post-multiply rotation matrix. Instead of transposing the input we invert the output quaternion.
-            var sRotationVector = -q.Angle * q.Axis;
-
-            var rotationVector = new Matrix(3, 1);
-            for (int i = 0; i < 3; i++)
-                rotationVector[i] = sRotationVector[i];
-            return rotationVector;
-        }
-
-        static public double PlaneFit(IList<Matrix> points, out Matrix X, out double D)
-        {
-            X = new Matrix(3, 1);
-
-            var mu = new RoomAliveToolkit.Matrix(3, 1);
-            for (int i = 0; i < points.Count; i++)
-                mu.Add(points[i]);
-            mu.Scale(1f / (float)points.Count);
-
-            var A = new RoomAliveToolkit.Matrix(3, 3);
-            var pc = new RoomAliveToolkit.Matrix(3, 1);
-            var M = new RoomAliveToolkit.Matrix(3, 3);
-            for (int i = 0; i < points.Count; i++)
-            {
-                var p = points[i];
-                pc.Sub(p, mu);
-                M.Outer(pc, pc);
-                A.Add(M);
-            }
-
-            var V = new RoomAliveToolkit.Matrix(3, 3);
-            var d = new RoomAliveToolkit.Matrix(3, 1);
-            A.Eig(V, d); // TODO: replace with 3x3 version?
-
-            //Console.WriteLine("------");
-            //Console.WriteLine(A);
-            //Console.WriteLine(V);
-            //Console.WriteLine(d);
-
-            double minEigenvalue = Double.MaxValue;
-            int minEigenvaluei = 0;
-            for (int i = 0; i < 3; i++)
-                if (d[i] < minEigenvalue)
-                {
-                    minEigenvalue = d[i];
-                    minEigenvaluei = i;
-                }
-
-            X.CopyCol(V, minEigenvaluei);
-
-            D = -X.Dot(mu);
-
-            // min eigenvalue is the sum of squared distances to the plane
-            // signed distance is: double distance = X.Dot(point) + D;
-
-            return minEigenvalue;
-        }
-
-
-
+ 
+        
         //[STAThread]
         //public static unsafe void Main()
         //{

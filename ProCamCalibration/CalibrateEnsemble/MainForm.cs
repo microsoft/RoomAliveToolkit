@@ -872,7 +872,7 @@ namespace RoomAliveToolkit
                     projectorMenuItems.Add(toolStripMenuItem);
                 }
 
-                SetDefaultView();
+                SetDefaultViewAndProjection();
 
                 // we have a file loaded, so enable menu items
                 saveToolStripMenuItem.Enabled = true;
@@ -909,7 +909,7 @@ namespace RoomAliveToolkit
         {
             foreach (var menuItem in projectorMenuItems)
                 menuItem.Checked = false;
-            SetDefaultView();
+            SetDefaultViewAndProjection();
         }
 
         void viewMenuItem_Click(object sender, EventArgs e)
@@ -1193,7 +1193,7 @@ namespace RoomAliveToolkit
                         //float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
                         //projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
                         //projection.Transpose();
-                        SetDefaultView();
+                        SetDefaultPerspectiveProjection();
                     }
                 }
         }
@@ -1457,15 +1457,20 @@ namespace RoomAliveToolkit
             }
         }
 
-        void SetDefaultView()
+        void SetDefaultPerspectiveProjection()
         {
-            view = SharpDX.Matrix.Identity;
             float aspect = (float)videoPanel1.Width / (float)videoPanel1.Height;
             projection = GraphicsTransforms.PerspectiveFov(35.0f / 180.0f * (float)Math.PI, aspect, 0.1f, 100.0f);
             projection.Transpose();
+            manipulator.Projection = projection;
+        }
+
+        void SetDefaultViewAndProjection()
+        {
+            view = SharpDX.Matrix.Identity;
+            SetDefaultPerspectiveProjection();
 
             manipulator.View = view;
-            manipulator.Projection = projection;
             manipulator.Viewport = viewport;
             manipulator.OriginalView = view;
             perspectiveAtOriginToolStripMenuItem.Checked = true;

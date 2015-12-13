@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RoomAliveToolkit</RootNamespace>
-    <AssemblyName>ProCamEnsembleCalibration</AssemblyName>
+    <AssemblyName>ProCamEnsemble</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
@@ -36,6 +36,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MathNet.Numerics, Version=3.6.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -57,6 +58,10 @@
     <Reference Include="SharpDX.Direct3D11, Version=2.6.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpDX.2.6.3\Bin\DirectX11_2-net40\SharpDX.Direct3D11.dll</HintPath>
     </Reference>
+    <Reference Include="SharpDX.DXGI, Version=2.6.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\SharpDX.2.6.3\Bin\DirectX11_2-net40\SharpDX.DXGI.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Drawing" />
@@ -70,6 +75,9 @@
   <ItemGroup>
     <Compile Include="ARGBImage.cs" />
     <Compile Include="ByteImage.cs" />
+    <Compile Include="CameraDeviceResource.cs" />
+    <Compile Include="DepthAndColorShader.cs" />
+    <Compile Include="DepthToWorldCoordinateShader.cs" />
     <Compile Include="GraphicsTransforms.cs" />
     <Compile Include="ProjectorCameraEnsemble.cs" />
     <Compile Include="CameraMath.cs" />

@@ -351,10 +351,12 @@ namespace RoomAliveToolkit
                     for (int x = 0; x < Kinect2Calibration.depthImageWidth; x++)
                     {
                         var pointF = depthFrameToCameraSpaceTable[y * Kinect2Calibration.depthImageWidth + x];
+                        float meanDepthMeters = meanImage[x, y] / 1000.0f;
+
                         Float3 worldPoint;
-                        worldPoint.x = pointF.X * meanImage[x, y];
-                        worldPoint.y = pointF.Y * meanImage[x, y];
-                        worldPoint.z = meanImage[x, y];
+                        worldPoint.x = pointF.X * meanDepthMeters;
+                        worldPoint.y = pointF.Y * meanDepthMeters;
+                        worldPoint.z = meanDepthMeters;
                         world[x, y] = worldPoint;
                     }
                 SaveToPly(cameraDirectory + "/mean.ply", world);
@@ -615,7 +617,7 @@ namespace RoomAliveToolkit
                         }
                     }
 
-                    if (worldPoints.Count > 1000)
+                    if (worldPoints.Count > 5000)
                     {
                         var pointSet = new CalibrationPointSet();
                         pointSet.worldPoints = worldPoints;
@@ -628,6 +630,8 @@ namespace RoomAliveToolkit
 
             Console.WriteLine("elapsed time " + stopWatch.ElapsedMilliseconds);
 
+
+            //var random = new Random();
 
 
             // calibration
@@ -643,7 +647,7 @@ namespace RoomAliveToolkit
 
                 int numCompletedFits = 0;
 
-                for (int i = 0; (numCompletedFits < 4) && (i < 10); i++)
+                for (int i = 0; (numCompletedFits < 4) && (i < 40); i++)
                 {
                     Console.WriteLine("RANSAC iteration " + i);
 
@@ -718,6 +722,38 @@ namespace RoomAliveToolkit
                     {
                         Matrix R, t;
                         CameraMath.ExtrinsicsInit(cameraMatrix, distCoeffs, worldPointSubsets[ii], imagePointSubsets[ii], out R, out t);
+
+                        //// generate a random orienation
+                        //var sphere = Matrix.GaussianSample(3, 1);
+                        //sphere.Normalize();
+
+
+                        //var unitZ = Matrix.Zero(3, 1);
+                        //unitZ[2] = 1;
+
+
+
+
+                        //var quat = new Matrix(4, 1);
+                        //quat.RotFromTo2Quat(unitZ, sphere);
+                        //R = new Matrix(3, 3);
+                        //R.RotQuat2Matrix(quat);
+
+
+                        //t = Matrix.Zero(3, 1);
+
+
+
+
+
+                        R.RotEuler2Matrix(0, 0, Math.PI * ( ( random.NextDouble() - 1 )* 2 ) );
+
+                        //R.RotEuler2Matrix(0.01, 0.01, 0.01);
+
+                        //Console.WriteLine(R);
+
+                        t.Zero();
+
                         rotations.Add(CameraMath.RotationVectorFromRotationMatrix(R));
                         translations.Add(t);
                     }
@@ -763,7 +799,7 @@ namespace RoomAliveToolkit
                             double dy = pointSet.imagePoints[k].Y - v;
                             double thisError = Math.Sqrt((dx * dx) + (dy * dy));
 
-                            if (thisError < 2.0f) // TODO: how to set this?
+                            if (thisError < 4.0f) // TODO: how to set this?
                             {
                                 worldPointInlierSet.Add(pointSet.worldPoints[k]);
                                 imagePointInlierSet.Add(pointSet.imagePoints[k]);
@@ -1272,23 +1308,9 @@ namespace RoomAliveToolkit
             }
             public override string ToString()
             {
-                return String.Format("v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
+                return String.Format(CultureInfo.InvariantCulture, "v {0:0.0000} {1:0.0000} {2:0.0000}\r\nvt {3:0.0000} {4:0.0000}", x, y, z, u, v);
             }
         }
-
-        public class CultureInvariantStreamWriter : StreamWriter
-        {
-            public CultureInvariantStreamWriter(string path) : base(path) { }
-            public CultureInvariantStreamWriter(string path, bool append, Encoding encoding) : base(path, append, encoding) { }
-            public override IFormatProvider FormatProvider
-            {
-                get
-                {
-                    return CultureInfo.InvariantCulture;
-                }
-            }
-        }
-
 
         public void SaveToOBJ(string directory, string objPath)
         {
@@ -1309,8 +1331,8 @@ namespace RoomAliveToolkit
                 new System.Drawing.Point(0, 1),
             };
 
-            var streamWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".obj");
-            var mtlFileWriter = new CultureInvariantStreamWriter(objDirectory + "/" + objFilename + ".mtl");
+            var streamWriter = new StreamWriter(objDirectory + "/" + objFilename + ".obj");
+            var mtlFileWriter = new StreamWriter(objDirectory + "/" + objFilename + ".mtl");
             streamWriter.WriteLine("mtllib " + objFilename + ".mtl");
             uint nextVertexIndex = 1;
             var depthImage = new FloatImage(Kinect2Calibration.depthImageWidth, Kinect2Calibration.depthImageHeight);
@@ -1496,7 +1518,7 @@ namespace RoomAliveToolkit
 
         static public void SaveToPly(string filename, Float3Image pts3D)
         {
-            using (var file = new CultureInvariantStreamWriter(filename, false, Encoding.ASCII))
+            using (var file = new StreamWriter(filename, false, Encoding.ASCII))
             {
                 // Write Header
                 file.WriteLine("ply");
@@ -1520,7 +1542,7 @@ namespace RoomAliveToolkit
                             file.WriteLine("0 0 0");
                             continue;
                         }
-                        file.WriteLine(xyz.x.ToString("0.000") + " " + xyz.y.ToString("0.000") + " " + xyz.z.ToString("0.000"));
+                        file.WriteLine(String.Format(CultureInfo.InvariantCulture, "{0:0.000} {1:0.000} {2:0.000}", xyz.x, xyz.y, xyz.z));
                     }
                 }
             }

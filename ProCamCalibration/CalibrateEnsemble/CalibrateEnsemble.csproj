@@ -40,6 +40,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -194,9 +195,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ProCamEnsembleCalibration\ProCamEnsembleCalibrationLib.csproj">
+    <ProjectReference Include="..\ProCamEnsembleCalibration\ProCamEnsemble.csproj">
       <Project>{d8a7fb2f-f8fd-4489-aa7b-82b57b12d6f1}</Project>
-      <Name>ProCamEnsembleCalibrationLib</Name>
+      <Name>ProCamEnsemble</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -28,14 +28,22 @@ namespace RoomAliveToolkit
         {
             get { return System.Text.Encoding.Default; }
         }
+
+        const int maxLines = 1000;
         public override void Write(string value)
         {
             MethodInvoker invoker = delegate
             {
                 textBox.AppendText(value);
-                const int maxLength = 20000;
-                if (textBox.Text.Length > maxLength)
-                    textBox.Text = textBox.Text.Substring(textBox.Text.Length - maxLength);
+                var lines = textBox.Lines;
+                var nLines = lines.Length;
+                if (nLines > (maxLines + 100))
+                {
+                    var newLines = new string[maxLines];
+                    for (int i = 0; i < maxLines; i++)
+                        newLines[i] = lines[nLines - maxLines + i];
+                    textBox.Lines = newLines;
+                }
                 textBox.SelectionStart = textBox.Text.Length;
                 textBox.ScrollToCaret();
             };

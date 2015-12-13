@@ -7,6 +7,7 @@ RWByteAddressBuffer indices : register(u1);
 cbuffer constants : register(b0)
 {
 	matrix world;
+	uint indexOffset;
 }
 
 static const int depthImageWidth = 512;
@@ -46,6 +47,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	worldCoordinates.Store3(index * 12, asuint(pos.xyz));
 
 	// indices
-	indices.Store3(index * 24, upperValid * uint3(index, index + depthImageWidth, index + 1)); // 00, 01, 10
-	indices.Store3(index * 24 + 12, lowerValid * uint3(index + depthImageWidth + 1, index + 1, index + depthImageWidth)); // 11, 10, 10
+	uint index2 = index + indexOffset; // each camera is 512*484*6 vertices
+	indices.Store3(index * 24, upperValid * uint3(index2, index2 + depthImageWidth, index2 + 1)); // 00, 01, 10
+	indices.Store3(index * 24 + 12, lowerValid * uint3(index2 + depthImageWidth + 1, index2 + 1, index2 + depthImageWidth)); // 11, 10, 10
 }

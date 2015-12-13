@@ -80,6 +80,9 @@
     <Compile Include="KinectClient.cs" />
     <Compile Include="LevenbergMarquardt.cs" />
     <Compile Include="Matrix.cs" />
+    <Compile Include="ProjectorCameraEnsemble.XML.cs">
+      <DependentUpon>ProjectorCameraEnsemble.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProjectorClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RGBImage.cs" />

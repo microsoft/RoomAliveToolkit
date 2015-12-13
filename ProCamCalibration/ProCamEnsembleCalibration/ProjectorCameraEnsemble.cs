@@ -10,28 +10,10 @@ using System.Globalization;
 
 namespace RoomAliveToolkit
 {
-    [DataContract]
-    public class ProjectorCameraEnsemble
+    public partial class ProjectorCameraEnsemble
     {
-        [DataMember]
-        public string name;
-        [DataMember]
-        public List<Camera> cameras;
-        [DataMember]
-        public List<Projector> projectors;
-
-        [DataContract]
-        public class Camera
+        public partial class Camera
         {
-            [DataMember]
-            public string name;
-            [DataMember]
-            public string hostNameOrAddress;
-            [DataMember]
-            public Matrix pose;
-            [DataMember]
-            public RoomAliveToolkit.Kinect2Calibration calibration;
-
             public List<Matrix> colorImagePoints;
             public List<Matrix> depthCameraPoints;
             public KinectServer2Client Client
@@ -63,26 +45,8 @@ namespace RoomAliveToolkit
             private KinectServer2Client client;
         }
 
-        [DataContract]
-        public class Projector
+        public partial class Projector
         {
-            [DataMember]
-            public string name;
-            [DataMember]
-            public string hostNameOrAddress;
-            [DataMember]
-            public int displayIndex;
-            [DataMember]
-            public int width, height;
-            [DataMember]
-            public Matrix cameraMatrix;
-            [DataMember]
-            public Matrix lensDistortion;
-            [DataMember]
-            public Matrix pose;
-            [DataMember]
-            public bool lockIntrinsics;
-
             public Dictionary<Camera, CalibrationPointSet> calibrationPointSets;
 
             public ProjectorServerClient Client

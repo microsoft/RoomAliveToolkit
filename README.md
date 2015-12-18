@@ -136,4 +136,6 @@ The resulting calibration set can be downloaded [here](http://research.microsoft
 [video of projection mapping sample, showing wobble effect] (https://www.youtube.com/watch?v=VzncaJcaTF0)
 
 [RoomAlive video] (https://www.youtube.com/watch?v=ILb5ExBzHqw)
+
+[5 projector, 8 camera calibration example (2GB!)] (http://research.microsoft.com/~awilson/RoomAliveToolkit/calibration5x8.zip)
  

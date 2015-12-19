@@ -41,7 +41,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	float2 distorted = depthFrameToCameraSpaceTable[DTid.xy];
 	float depth = (float)depth00 / 1000; // m
 	float4 depthCamera = float4(distorted*depth, depth, 1);
-	float4 pos = mul(depthCamera, world);
+	float4 pos = mul(world, depthCamera);
 
 	uint index = DTid.y * depthImageWidth + DTid.x;
 	worldCoordinates.Store3(index * 12, asuint(pos.xyz));

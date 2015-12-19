@@ -1,12 +1,9 @@
 ﻿using SharpDX;
-using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using SharpDX.WIC;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.ServiceModel.Discovery;
 using System.Windows.Forms;
 
@@ -42,7 +39,7 @@ namespace RoomAliveToolkit
             {
                 BufferCount = 1,
                 Usage = Usage.RenderTargetOutput,
-                OutputHandle = videoPanel1.Handle, // splitContainer1.Panel1.Handle,
+                OutputHandle = videoPanel1.Handle,
                 IsWindowed = true,
                 ModeDescription = new ModeDescription(0, 0, new Rational(60, 1), Format.R8G8B8A8_UNorm),
                 Flags = SwapChainFlags.AllowModeSwitch,
@@ -78,8 +75,7 @@ namespace RoomAliveToolkit
             viewport = new Viewport(0, 0, videoPanel1.Width, videoPanel1.Height, 0f, 1f);
 
             // shaders
-            depthAndColorShader = new DepthAndColorShader(device);
-            depthToWorldCoordinateShader = new DepthToWorldCoordinateShader(device);
+            depthAndColorShader = new DepthAndColorCameraShader(device);
 
             manipulator = new Manipulator(videoPanel1);
 
@@ -114,10 +110,9 @@ namespace RoomAliveToolkit
         RenderTargetView renderTargetView;
         DepthStencilView depthStencilView;
         Viewport viewport;
-        DepthAndColorShader depthAndColorShader;
+        DepthAndColorCameraShader depthAndColorShader;
         DepthToWorldCoordinateShader depthToWorldCoordinateShader;
-        SharpDX.Direct3D11.Buffer vertexBuffer, indexBuffer;
-        VertexBufferBinding vertexBufferBinding;
+        DepthMapShader depthMapShader;
 
         Manipulator manipulator;
         Object renderLock = new Object();
@@ -127,113 +122,46 @@ namespace RoomAliveToolkit
         {
             while (true)
             {
-                lock (renderLock) // TODO: probably coarser than it needs to be
+                view = manipulator.Update();
+                // view and projection matrix are post-multiply
+                var worldViewProjection = view * projection;
+
+                lock (renderLock)
                 {
-                    view = manipulator.Update();
-
-                    var deviceContext = device.ImmediateContext;
-
-                    // fill our vertex/index buffer with world coordinate transformed vertices over all cameras
-                    deviceContext.ComputeShader.Set(depthToWorldCoordinateShader.computeShader);
-                    deviceContext.ComputeShader.SetConstantBuffer(0, depthToWorldCoordinateShader.constantBuffer);
-
                     if (ensemble != null)
+                    {
+                        var deviceContext = device.ImmediateContext;
+
+                        // fill our vertex/index buffer with world coordinate transformed vertices over all cameras
+                        // TODO: this should be done only if the corresponding depth image or world transform has changed
                         foreach (var camera in ensemble.cameras)
-                        {
-                            // TODO: this should be done only if the corresponding depth image or world transform has changed
+                            depthToWorldCoordinateShader.UpdateCamera(deviceContext, camera, cameraDeviceResources[camera]);
 
-                            if (cameraDeviceResources.ContainsKey(camera))
-                            {
-                                var world = new SharpDX.Matrix();
-                                for (int i = 0; i < 4; i++)
-                                    for (int j = 0; j < 4; j++)
-                                        world[i, j] = (float)camera.pose[i, j];
-                                world.Transpose();
+                        depthMapShader.Render(deviceContext, ensemble.projectors, ensemble.cameras.Count, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);
 
-                                // offset adjusts index value to point to this camera's vertices
-                                int cameraIndex = cameraDeviceResources[camera].cameraIndex;
-                                int offset = cameraIndex * Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight;
-                                depthToWorldCoordinateShader.SetConstants(deviceContext, world, (uint)offset);
+                        // prepare our render target
+                        deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
+                        deviceContext.ClearRenderTargetView(renderTargetView, Color4.Black);
+                        deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth, 1, 0);
+                        deviceContext.Rasterizer.SetViewport(viewport);
 
-                                deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResources[camera].depthImageTextureRV);
-                                deviceContext.ComputeShader.SetShaderResource(1, cameraDeviceResources[camera].depthFrameToCameraSpaceTableTextureRV);
-                                deviceContext.ComputeShader.SetUnorderedAccessView(0, cameraDeviceResources[camera].vertexBufferUAV);
-                                deviceContext.ComputeShader.SetUnorderedAccessView(1, cameraDeviceResources[camera].indexBufferUAV);
-
-                                deviceContext.Dispatch(16, 22, 1);
-                            }
-                        }
-                    deviceContext.ComputeShader.SetShaderResource(0, null);
-                    deviceContext.ComputeShader.SetShaderResource(1, null);
-                    deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
-                    deviceContext.ComputeShader.SetUnorderedAccessView(1, null);
-                    deviceContext.ComputeShader.Set(null);
-
-
-                    // texture mapped view for UI
-                    deviceContext.InputAssembler.InputLayout = depthAndColorShader.vertexInputLayout;
-                    deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
-                    deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
-                    deviceContext.InputAssembler.SetIndexBuffer(indexBuffer, Format.R32_UInt, 0);
-                    deviceContext.VertexShader.Set(depthAndColorShader.vertexShader);
-                    deviceContext.VertexShader.SetConstantBuffer(0, depthAndColorShader.constantBuffer);
-                    deviceContext.PixelShader.Set(depthAndColorShader.pixelShader);
-                    deviceContext.PixelShader.SetSampler(0, depthAndColorShader.colorSamplerState);
-                    deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
-                    deviceContext.OutputMerger.DepthStencilState = depthAndColorShader.depthStencilState;
-                    deviceContext.Rasterizer.State = depthAndColorShader.rasterizerState;
-                    deviceContext.Rasterizer.SetViewport(viewport);
-                    deviceContext.ClearRenderTargetView(renderTargetView, Color4.Black);
-                    deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth, 1, 0);
-
-                    // view and projection matrix are post-multiply
-                    var worldViewProjection = view * projection;
-
-                    // render all cameras
-                    if (ensemble != null)
                         foreach (var camera in ensemble.cameras)
                         {
                             // while we have a single vertex buffer, we need separate draw calls here for each camera because we 
                             // are texture mapping each set of depth camera vertices with the corresponding color camera image
-                            if (cameraDeviceResources.ContainsKey(camera))
-                                if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
-                                {
-                                    var depthToWorld = new SharpDX.Matrix();
-                                    var depthToColor = new SharpDX.Matrix();
-                                    for (int i = 0; i < 4; i++)
-                                        for (int j = 0; j < 4; j++)
-                                        {
-                                            depthToWorld[i, j] = (float)camera.pose[i, j];
-                                            depthToColor[i, j] = (float)camera.calibration.depthToColorTransform[i, j];
-                                        }
-                                    depthToWorld.Transpose();
-                                    depthToColor.Transpose();
-                                    var worldToDepth = depthToWorld;
-                                    worldToDepth.Invert();
-                                    var worldToColor = worldToDepth * depthToColor;
-
-                                    depthAndColorShader.SetConstants(deviceContext, camera.calibration, worldToColor, worldViewProjection);
-
-                                    var camerDeviceResource = cameraDeviceResources[camera];
-
-                                    deviceContext.VertexShader.SetShaderResource(0, camerDeviceResource.depthImageTextureRV);
-                                    deviceContext.VertexShader.SetShaderResource(1, camerDeviceResource.depthFrameToCameraSpaceTableTextureRV);
-                                    deviceContext.PixelShader.SetShaderResource(0, camerDeviceResource.colorImageTextureRV);
-                                    int numVertices = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6;
-                                    deviceContext.DrawIndexed(numVertices, numVertices * camerDeviceResource.cameraIndex, 0);
-                                }
+                            if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
+                            {
+                                depthAndColorShader.RenderCamera(deviceContext, camera, cameraDeviceResources[camera], depthToWorldCoordinateShader.vertexBufferBinding,
+                                    depthToWorldCoordinateShader.indexBuffer, worldViewProjection);
+                            }
                         }
 
-                    deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding());
-                    deviceContext.InputAssembler.SetIndexBuffer(null, Format.R32_UInt, 0);
-
-
-
-                    swapChain.Present(0, PresentFlags.None);
-
-                    frameRate.Tick();
-                    frameRate.PrintMessage();
+                        swapChain.Present(0, PresentFlags.None);
+                    }
                 }
+
+                frameRate.Tick();
+                frameRate.PrintMessage();
             }
         }
 
@@ -246,45 +174,23 @@ namespace RoomAliveToolkit
             lock (renderLock)
             {
                 // dispose/create device resources that depend on number of cameras; do this first, as camera device resources will depend on them
+                if (depthToWorldCoordinateShader != null)
+                    depthToWorldCoordinateShader.Dispose();
+                depthToWorldCoordinateShader = new DepthToWorldCoordinateShader(device, ensemble.cameras.Count);
 
-                if (vertexBuffer != null)
-                    vertexBuffer.Dispose();
-                var vertexBufferDesc = new BufferDescription()
-                {
-                    BindFlags = BindFlags.UnorderedAccess | BindFlags.VertexBuffer,
-                    OptionFlags = ResourceOptionFlags.BufferAllowRawViews,
-                    CpuAccessFlags = CpuAccessFlags.None,
-                    Usage = ResourceUsage.Default,
-                    SizeInBytes = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 3 * 4 * ensemble.cameras.Count,
-                };
-                vertexBuffer = new SharpDX.Direct3D11.Buffer(device, vertexBufferDesc);
-                vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 3 * 4, 0);
+                if (depthMapShader != null)
+                    depthMapShader.Dispose();
+                depthMapShader = new DepthMapShader(device, ensemble.projectors.Count);
 
-                if (indexBuffer != null)
-                    indexBuffer.Dispose();
-                var indexBufferDesc = new BufferDescription()
-                {
-                    BindFlags = BindFlags.UnorderedAccess | BindFlags.IndexBuffer,
-                    OptionFlags = ResourceOptionFlags.BufferAllowRawViews,
-                    CpuAccessFlags = CpuAccessFlags.None,
-                    Usage = ResourceUsage.Default,
-                    SizeInBytes = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6 * 4 * ensemble.cameras.Count,
-                };
-                indexBuffer = new SharpDX.Direct3D11.Buffer(device, indexBufferDesc);
-
-
-                // deallocate/allocate camera d3d resources
+                // dispose/create camera d3d resources
                 foreach (var cameraDeviceResource in cameraDeviceResources.Values)
                     cameraDeviceResource.Dispose();
                 cameraDeviceResources.Clear();
-
-
                 foreach (var camera in ensemble.cameras)
                 {
                     int cameraIndex = ensemble.cameras.IndexOf(camera);
-
                     if (camera.calibration != null) // TODO: this might not be the right way to check
-                        cameraDeviceResources[camera] = new CameraDeviceResource(device, camera, cameraIndex, renderLock, directory, vertexBuffer, indexBuffer);
+                        cameraDeviceResources[camera] = new CameraDeviceResource(device, camera, cameraIndex, renderLock, directory, depthToWorldCoordinateShader.vertexBuffer, depthToWorldCoordinateShader.indexBuffer);
                 }
             }
 

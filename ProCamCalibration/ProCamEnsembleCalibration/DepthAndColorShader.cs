@@ -9,9 +9,9 @@ using Device = SharpDX.Direct3D11.Device;
 
 namespace RoomAliveToolkit
 {
-    public class DepthAndColorShader : IDisposable
+    public class DepthAndColorCameraShader : IDisposable
     {
-        public DepthAndColorShader(Device device)
+        public DepthAndColorCameraShader(Device device)
         {
             var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/DepthAndColorVS.cso"));
             vertexShader = new VertexShader(device, shaderByteCode);
@@ -69,17 +69,23 @@ namespace RoomAliveToolkit
             });
         }
 
-        public VertexShader vertexShader;
-        public PixelShader pixelShader;
-        public DepthStencilState depthStencilState;
-        public RasterizerState rasterizerState;
-        public SamplerState colorSamplerState;
-        public SharpDX.Direct3D11.Buffer constantBuffer;
-        public InputLayout vertexInputLayout;
+        VertexShader vertexShader;
+        PixelShader pixelShader;
+        DepthStencilState depthStencilState;
+        RasterizerState rasterizerState;
+        SamplerState colorSamplerState;
+        SharpDX.Direct3D11.Buffer constantBuffer;
+        InputLayout vertexInputLayout;
 
         public void Dispose()
         {
-            // TODO
+            vertexShader.Dispose();
+            pixelShader.Dispose();
+            depthStencilState.Dispose();
+            rasterizerState.Dispose();
+            colorSamplerState.Dispose();
+            constantBuffer.Dispose();
+            vertexInputLayout.Dispose();
         }
 
         // protip: compile shader with /Fc; output gives exact layout
@@ -129,8 +135,49 @@ namespace RoomAliveToolkit
             deviceContext.UnmapSubresource(constantBuffer, 0);
         }
 
+        public void RenderCamera(DeviceContext deviceContext, 
+            ProjectorCameraEnsemble.Camera camera, 
+            CameraDeviceResource cameraDeviceResource, 
+            VertexBufferBinding vertexBufferBinding, 
+            SharpDX.Direct3D11.Buffer indexBuffer,
+            SharpDX.Matrix worldViewProjection)
+        {
+            deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
+            deviceContext.InputAssembler.SetIndexBuffer(indexBuffer, Format.R32_UInt, 0);
+
+            deviceContext.InputAssembler.InputLayout = vertexInputLayout;
+            deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
+            deviceContext.VertexShader.Set(vertexShader);
+            deviceContext.VertexShader.SetConstantBuffer(0, constantBuffer);
+            deviceContext.PixelShader.Set(pixelShader);
+            deviceContext.PixelShader.SetSampler(0, colorSamplerState);
+            deviceContext.OutputMerger.DepthStencilState = depthStencilState;
+            deviceContext.Rasterizer.State = rasterizerState;
+
+            var depthToWorld = new SharpDX.Matrix();
+            var depthToColor = new SharpDX.Matrix();
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                {
+                    depthToWorld[i, j] = (float)camera.pose[i, j];
+                    depthToColor[i, j] = (float)camera.calibration.depthToColorTransform[i, j];
+                }
+            depthToWorld.Transpose();
+            depthToColor.Transpose();
+            var worldToDepth = depthToWorld;
+            worldToDepth.Invert();
+            var worldToColor = worldToDepth * depthToColor;
+
+            SetConstants(deviceContext, camera.calibration, worldToColor, worldViewProjection);
+
+            deviceContext.PixelShader.SetShaderResource(0, cameraDeviceResource.colorImageTextureRV);
+            int numVertices = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6;
+            deviceContext.DrawIndexed(numVertices, numVertices * cameraDeviceResource.cameraIndex, 0);
+
+
+            deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding());
+            deviceContext.InputAssembler.SetIndexBuffer(null, Format.R32_UInt, 0);
+        }
+
     }
-
-
-
 }

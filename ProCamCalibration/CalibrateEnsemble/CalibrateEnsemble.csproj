@@ -110,7 +110,6 @@
     <Compile Include="ConsoleTextBox.Designer.cs">
       <DependentUpon>ConsoleTextBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="DepthMapsShader.cs" />
     <Compile Include="FrameRate.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -153,16 +152,16 @@
       <Link>Content\DepthAndColorVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\DepthMapsPS.cso">
-      <Link>Content\DepthMapsPS.cso</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\x64\Debug\DepthMapsVS.cso">
-      <Link>Content\DepthMapsVS.cso</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\x64\Debug\DepthCS.cso">
       <Link>Content\DepthCS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\DepthMapPS.cso">
+      <Link>Content\DepthMapPS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\DepthMapVS.cso">
+      <Link>Content\DepthMapVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="App.config" />

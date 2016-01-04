@@ -76,6 +76,7 @@ namespace RoomAliveToolkit
 
             // shaders
             depthAndColorShader = new DepthAndColorCameraShader(device);
+            blendShader = new BlendShader(device);
 
             manipulator = new Manipulator(videoPanel1);
 
@@ -111,8 +112,10 @@ namespace RoomAliveToolkit
         DepthStencilView depthStencilView;
         Viewport viewport;
         DepthAndColorCameraShader depthAndColorShader;
+        BlendShader blendShader;
         DepthToWorldCoordinateShader depthToWorldCoordinateShader;
         DepthMapShader depthMapShader;
+        ColorDepthMapShader colorDepthMapShader;
 
         Manipulator manipulator;
         Object renderLock = new Object();
@@ -137,7 +140,9 @@ namespace RoomAliveToolkit
                         foreach (var camera in ensemble.cameras)
                             depthToWorldCoordinateShader.UpdateCamera(deviceContext, camera, cameraDeviceResources[camera]);
 
+                        // for dynamic blending
                         depthMapShader.Render(deviceContext, ensemble.projectors, ensemble.cameras.Count, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);
+                        colorDepthMapShader.Render(deviceContext, ensemble.cameras, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);
 
                         // prepare our render target
                         deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
@@ -145,16 +150,20 @@ namespace RoomAliveToolkit
                         deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth, 1, 0);
                         deviceContext.Rasterizer.SetViewport(viewport);
 
-                        foreach (var camera in ensemble.cameras)
-                        {
-                            // while we have a single vertex buffer, we need separate draw calls here for each camera because we 
-                            // are texture mapping each set of depth camera vertices with the corresponding color camera image
-                            if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
-                            {
-                                depthAndColorShader.RenderCamera(deviceContext, camera, cameraDeviceResources[camera], depthToWorldCoordinateShader.vertexBufferBinding,
-                                    depthToWorldCoordinateShader.indexBuffer, worldViewProjection);
-                            }
-                        }
+                        //foreach (var camera in ensemble.cameras)
+                        //{
+                        //    // while we have a single vertex buffer, we need separate draw calls here for each camera because we 
+                        //    // are texture mapping each set of depth camera vertices with the corresponding color camera image
+                        //    if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
+                        //    {
+                        //        depthAndColorShader.RenderCamera(deviceContext, camera, cameraDeviceResources[camera], depthToWorldCoordinateShader.vertexBufferBinding,
+                        //            depthToWorldCoordinateShader.indexBuffer, worldViewProjection);
+
+                        //    }
+                        //}
+
+                        blendShader.Render(deviceContext, ensemble.projectors, ensemble.cameras, ensembleDeviceResources, depthToWorldCoordinateShader.vertexBufferBinding,
+                            depthToWorldCoordinateShader.indexBuffer, worldViewProjection, depthMapShader.depthMapsSRV, colorDepthMapShader.depthMapsSRV);
 
                         swapChain.Present(0, PresentFlags.None);
                     }
@@ -168,6 +177,8 @@ namespace RoomAliveToolkit
         SharpDX.Matrix view, projection;
 
         Dictionary<ProjectorCameraEnsemble.Camera, CameraDeviceResource> cameraDeviceResources = new Dictionary<ProjectorCameraEnsemble.Camera, CameraDeviceResource>();
+        EnsembleDeviceResources ensembleDeviceResources;
+
 
         void EnsembleChanged()
         {
@@ -182,6 +193,10 @@ namespace RoomAliveToolkit
                     depthMapShader.Dispose();
                 depthMapShader = new DepthMapShader(device, ensemble.projectors.Count);
 
+                if (colorDepthMapShader != null)
+                    colorDepthMapShader.Dispose();
+                colorDepthMapShader = new ColorDepthMapShader(device, ensemble.cameras.Count);
+
                 // dispose/create camera d3d resources
                 foreach (var cameraDeviceResource in cameraDeviceResources.Values)
                     cameraDeviceResource.Dispose();
@@ -192,6 +207,8 @@ namespace RoomAliveToolkit
                     if (camera.calibration != null) // TODO: this might not be the right way to check
                         cameraDeviceResources[camera] = new CameraDeviceResource(device, camera, cameraIndex, renderLock, directory, depthToWorldCoordinateShader.vertexBuffer, depthToWorldCoordinateShader.indexBuffer);
                 }
+
+                ensembleDeviceResources = new EnsembleDeviceResources(device, ensemble, directory, renderLock);
             }
 
             Invoke((Action)delegate

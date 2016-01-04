@@ -26,7 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -76,9 +76,12 @@
     <Compile Include="ARGBImage.cs" />
     <Compile Include="ByteImage.cs" />
     <Compile Include="CameraDeviceResource.cs" />
+    <Compile Include="BlendShader.cs" />
+    <Compile Include="ColorDepthMapShader.cs" />
     <Compile Include="DepthAndColorShader.cs" />
     <Compile Include="DepthMapShader.cs" />
     <Compile Include="DepthToWorldCoordinateShader.cs" />
+    <Compile Include="EnsembleDeviceResources.cs" />
     <Compile Include="GraphicsTransforms.cs" />
     <Compile Include="ProjectorCameraEnsemble.cs" />
     <Compile Include="CameraMath.cs" />

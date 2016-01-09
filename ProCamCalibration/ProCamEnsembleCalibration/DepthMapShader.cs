@@ -24,15 +24,46 @@ namespace RoomAliveToolkit
                 Width = depthMapWidth,
                 Height = depthMapHeight,
                 MipLevels = 1,
-                ArraySize = 1,
-                Format = Format.D32_Float,
+                ArraySize = numProjectors,
+                Format = Format.R32_Typeless,
                 SampleDescription = new SampleDescription(1, 0),
                 Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.DepthStencil,
+                BindFlags = BindFlags.DepthStencil | BindFlags.ShaderResource,
                 CpuAccessFlags = CpuAccessFlags.None
             };
             depthStencil = new Texture2D(device, depthBufferDesc);
-            depthStencilView = new DepthStencilView(device, depthStencil);
+
+            depthStencilViews = new DepthStencilView[numProjectors];
+            for (int i = 0; i < numProjectors; i++)
+            {
+                // when using a typeless texture format, we have to set the format by view description
+                var depthStencilViewDesc = new DepthStencilViewDescription()
+                {
+                    Format = Format.D32_Float,
+                    Dimension = DepthStencilViewDimension.Texture2DArray,
+                    Texture2DArray = new DepthStencilViewDescription.Texture2DArrayResource()
+                    {
+                        ArraySize = 1,
+                        FirstArraySlice = i,
+                        MipSlice = 0,
+                    }
+                };
+                depthStencilViews[i] = new DepthStencilView(device, depthStencil, depthStencilViewDesc);
+            }
+
+            var shaderResourceViewDesc = new ShaderResourceViewDescription()
+            {
+                Format = Format.R32_Float,
+                Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2DArray,
+                Texture2DArray = new ShaderResourceViewDescription.Texture2DArrayResource()
+                {
+                    ArraySize = numProjectors,
+                    FirstArraySlice = 0,
+                    MipLevels = -1,
+                    MostDetailedMip = 0,
+                }
+            };
+            depthStencilView2 = new ShaderResourceView(device, depthStencil, shaderResourceViewDesc);
 
             // depth stencil state
             var depthStencilStateDesc = new DepthStencilStateDescription()
@@ -122,10 +153,10 @@ namespace RoomAliveToolkit
         InputLayout vertexInputLayout;
         Texture2D depthMapsTexture, depthStencil;
         RenderTargetView[] depthMapRTVs;
-        DepthStencilView depthStencilView;
+        DepthStencilView[] depthStencilViews;
         Viewport viewport;
 
-        public ShaderResourceView depthMapsSRV;
+        public ShaderResourceView depthMapsSRV, depthStencilView2;
 
         public void Dispose()
         {
@@ -139,6 +170,8 @@ namespace RoomAliveToolkit
             depthStencil.Dispose();
             foreach (var renderTargetView in depthMapRTVs)
                 renderTargetView.Dispose();
+
+            // TOOD: dispose depthstencil views
         }
 
         [StructLayout(LayoutKind.Explicit, Size = ConstantBuffer.size)]
@@ -187,9 +220,11 @@ namespace RoomAliveToolkit
             {
                 var depthMapRTV = depthMapRTVs[renderTargeti++];
 
-                deviceContext.OutputMerger.SetTargets(depthStencilView, depthMapRTV);
+                int projectori = projectors.IndexOf(projector);
+
+                deviceContext.OutputMerger.SetTargets(depthStencilViews[projectori], depthMapRTV);
                 deviceContext.ClearRenderTargetView(depthMapRTV, Color.Black);
-                deviceContext.ClearDepthStencilView(depthStencilView, DepthStencilClearFlags.Depth, 1, 0);
+                deviceContext.ClearDepthStencilView(depthStencilViews[projectori], DepthStencilClearFlags.Depth, 1, 0);
 
                 var view = new SharpDX.Matrix();
                 for (int i = 0; i < 4; i++)

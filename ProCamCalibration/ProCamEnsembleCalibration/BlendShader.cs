@@ -42,11 +42,12 @@ namespace RoomAliveToolkit
             // color sampler state
             var colorSamplerStateDesc = new SamplerStateDescription()
             {
-                Filter = Filter.MinMagMipLinear,
+                Filter = Filter.Anisotropic,
                 AddressU = TextureAddressMode.Border,
                 AddressV = TextureAddressMode.Border,
                 AddressW = TextureAddressMode.Border,
                 BorderColor = new SharpDX.Color4(0, 0, 0, 0),
+                MaximumAnisotropy = 4,
             };
             colorSamplerState = new SamplerState(device, colorSamplerStateDesc);
 
@@ -198,7 +199,8 @@ namespace RoomAliveToolkit
             SharpDX.Direct3D11.Buffer indexBuffer,
             SharpDX.Matrix worldViewProjection,
             ShaderResourceView depthMapsSRV,
-            ShaderResourceView colorDepthMapsSRV)
+            ShaderResourceView colorDepthMapsSRV,
+            ShaderResourceView zBufferSRV)
         {
             deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
             deviceContext.InputAssembler.SetIndexBuffer(indexBuffer, Format.R32_UInt, 0);
@@ -221,6 +223,7 @@ namespace RoomAliveToolkit
             deviceContext.PixelShader.SetShaderResource(0, depthMapsSRV);
             deviceContext.PixelShader.SetShaderResource(1, ensembleDeviceResources.colorImageTextureRV);
             deviceContext.PixelShader.SetShaderResource(2, colorDepthMapsSRV);
+            deviceContext.PixelShader.SetShaderResource(3, zBufferSRV);
 
 
             int numVertices = cameras.Count * Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6;
@@ -231,6 +234,9 @@ namespace RoomAliveToolkit
             deviceContext.PixelShader.SetShaderResource(0, null);
             deviceContext.PixelShader.SetShaderResource(1, null);
             deviceContext.PixelShader.SetShaderResource(2, null);
+            deviceContext.PixelShader.SetShaderResource(3, null);
+
+
         }
 
         public float[] HSV2RGB(float[] hsv)

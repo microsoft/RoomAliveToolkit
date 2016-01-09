@@ -32,6 +32,11 @@ namespace RoomAliveToolkit
                 CpuAccessFlags = CpuAccessFlags.None
             };
             depthStencil = new Texture2D(device, depthBufferDesc);
+
+
+
+
+
             depthStencilView = new DepthStencilView(device, depthStencil);
 
             // depth stencil state

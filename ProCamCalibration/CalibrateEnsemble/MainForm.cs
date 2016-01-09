@@ -163,7 +163,7 @@ namespace RoomAliveToolkit
                         //}
 
                         blendShader.Render(deviceContext, ensemble.projectors, ensemble.cameras, ensembleDeviceResources, depthToWorldCoordinateShader.vertexBufferBinding,
-                            depthToWorldCoordinateShader.indexBuffer, worldViewProjection, depthMapShader.depthMapsSRV, colorDepthMapShader.depthMapsSRV);
+                            depthToWorldCoordinateShader.indexBuffer, worldViewProjection, depthMapShader.depthMapsSRV, colorDepthMapShader.depthMapsSRV, depthMapShader.depthStencilView2);
 
                         swapChain.Present(0, PresentFlags.None);
                     }

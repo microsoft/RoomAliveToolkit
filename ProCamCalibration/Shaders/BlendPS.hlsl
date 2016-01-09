@@ -1,6 +1,7 @@
 Texture2DArray<float> depthMaps : register(t0);
 Texture2DArray<float4> colorTextures : register(t1);
 Texture2DArray<float> colorDepthMaps : register(t2);
+Texture2DArray<float> zBuffers : register(t3);
 
 SamplerState colorSampler : register(s0);
 
@@ -62,7 +63,10 @@ float4 main(PSInput input) : SV_Target0
 
 			// predict distance to projector by looking at depth map
 			float2 tex = float2((projector.x + 1.0) / 2.0, 1 - (projector.y + 1.0) / 2.0);
-			float depth0 = depthMaps.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
+			//float depth0 = depthMaps.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
+
+			float depth0 = zBuffers.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
+
 
 			// depth of our vertex
 			float depth1 = projector.z;
@@ -83,7 +87,7 @@ float4 main(PSInput input) : SV_Target0
 
 	float num = 0;
 	float4 color = 0;
-	for (i = 0; i < numCameras; i++)
+	for (int i = 0; i < numCameras; i++)
 	{
 		// color camera coords
 		float4 colorCamera = mul(world4, cameras[i].worldToColor);

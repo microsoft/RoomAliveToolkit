@@ -38,13 +38,43 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	uint lowerValid = lowerNonzero * near43 * near53 * near45;
 
 	// world coordinate
-	float2 distorted = depthFrameToCameraSpaceTable[DTid.xy];
-	float depth = (float)depth00 / 1000; // m
-	float4 depthCamera = float4(distorted*depth, depth, 1);
-	float4 pos = mul(world, depthCamera);
+	float2 distorted00 = depthFrameToCameraSpaceTable[DTid.xy];
+	float depth00m = (float)depth00 / 1000; // m
+	float4 depthCamera00 = float4(distorted00*depth00m, depth00m, 1);
+	float4 pos00 = mul(world, depthCamera00);
+
+	float2 distorted10 = depthFrameToCameraSpaceTable[DTid.xy + uint2(1, 0)];
+	float depth10m = (float)depth10 / 1000; // m
+	float4 depthCamera10 = float4(distorted10*depth10m, depth10m, 1);
+
+	float2 distorted01 = depthFrameToCameraSpaceTable[DTid.xy + uint2(0, 1)];
+	float depth01m = (float)depth01 / 1000; // m
+	float4 depthCamera01 = float4(distorted01*depth01m, depth01m, 1);
+
+	float2 distorted11 = depthFrameToCameraSpaceTable[DTid.xy + uint2(1, 1)];
+	float depth11m = (float)depth11 / 1000; // m
+	float4 depthCamera11 = float4(distorted11*depth11m, depth11m, 1);
+
+
+	float3 a = depthCamera01.xyz - depthCamera00.xyz;
+	float3 b = depthCamera10.xyz - depthCamera00.xyz;
+	float3 normal0 = cross(a, b);
+	normal0 = mul((float3x3)world, normal0);
+	normal0 = normalize(normal0);
+
+	float3 c = depthCamera10.xyz - depthCamera11.xyz;
+	float3 d = depthCamera01.xyz - depthCamera11.xyz;
+	float3 normal1 = cross(c, d);
+	normal1 = mul((float3x3)world, normal1);
+	normal1 = normalize(normal1);
+
+	float3 normal = normal0 + normal1;
+
 
 	uint index = DTid.y * depthImageWidth + DTid.x;
-	worldCoordinates.Store3(index * 12, asuint(pos.xyz));
+	worldCoordinates.Store3(index * 24, asuint(pos00.xyz));
+	worldCoordinates.Store3(index * 24 + 12, asuint(normal));
+
 
 	// indices
 	uint index2 = index + indexOffset; // each camera is 512*484*6 vertices

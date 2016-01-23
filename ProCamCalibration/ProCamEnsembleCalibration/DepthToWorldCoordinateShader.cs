@@ -35,10 +35,10 @@ namespace RoomAliveToolkit
                 OptionFlags = ResourceOptionFlags.BufferAllowRawViews,
                 CpuAccessFlags = CpuAccessFlags.None,
                 Usage = ResourceUsage.Default,
-                SizeInBytes = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 3 * 4 * numCameras,
+                SizeInBytes = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6 * 4 * numCameras,
             };
             vertexBuffer = new SharpDX.Direct3D11.Buffer(device, vertexBufferDesc);
-            vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 3 * 4, 0);
+            vertexBufferBinding = new VertexBufferBinding(vertexBuffer, 6 * 4, 0);
 
             // index buffer
             var indexBufferDesc = new BufferDescription()

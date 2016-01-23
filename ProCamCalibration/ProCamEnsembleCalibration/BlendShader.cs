@@ -78,6 +78,7 @@ namespace RoomAliveToolkit
             vertexInputLayout = new InputLayout(device, shaderByteCode.Data, new[]
             {
                 new InputElement("pos", 0, Format.R32G32B32_Float, 0, 0),
+                new InputElement("NORMAL", 0, Format.R32G32B32_Float, 12, 0),
             });
         }
 

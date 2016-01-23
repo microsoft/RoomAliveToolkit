@@ -122,8 +122,8 @@ namespace RoomAliveToolkit
                 Format = Format.R32_Typeless,
                 Buffer = new UnorderedAccessViewDescription.BufferResource()
                 {
-                    FirstElement = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 3 * cameraIndex, // pick out this camera's segment
-                    ElementCount = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 3,
+                    FirstElement = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6 * cameraIndex, // pick out this camera's segment
+                    ElementCount = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6,
                     Flags = UnorderedAccessViewBufferFlags.Raw,
                 }
             };

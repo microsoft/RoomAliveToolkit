@@ -180,6 +180,22 @@
       <Link>Content\ColorDepthMapVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\x64\Debug\Depth.BilateralFilterCS.cso">
+      <Link>Content\Depth.BilateralFilterCS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\Depth.ToFloatCS.cso">
+      <Link>Content\Depth.ToFloatCS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\Depth.ComputeNormalsCS.cso">
+      <Link>Content\Depth.ComputeNormalsCS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\Depth.InitializeNormals.cso">
+      <Link>Content\Depth.InitializeNormals.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="App.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

@@ -10,6 +10,7 @@ struct PSInput
 	float4 pos : SV_Position; // view space coords
 	float3 world : world; // world coords
 	float3 normal : NORMAL;
+	float3 lightDir : LIGHTDIR;
 };
 
 struct Camera
@@ -45,14 +46,13 @@ float2 Project(Camera camera, float4 x)
 
 float4 main(PSInput input) : SV_Target0
 {
-	float3 lightDir = float3(0.2, -0.3, 1);
-	lightDir = normalize(lightDir);
-
+	float3 lightDir = normalize(input.lightDir);
 	float3 normal = normalize(input.normal);
-	float3 color = float3(1, 1, 1)*saturate(dot(lightDir, normal));
+	float3 color = float3(1, 1, 1)*saturate(dot(-lightDir, normal));
 
 	return float4(color, 1);
 
+	//return float4(1, 1, 1, 1);
 
 
 	//float4 world4 = float4(input.world, 1);

@@ -9,11 +9,13 @@ struct VSOutput
 	float4 pos : SV_Position;
 	float3 world : world;
 	float3 normal : NORMAL;
+	float3 lightDirection : LIGHTDIR;
 };
 
 cbuffer constants : register(b0)
 {
 	matrix viewProjection;
+	float3 lightPosition;
 }
 
 VSOutput main(VSInput input)
@@ -26,6 +28,7 @@ VSOutput main(VSInput input)
 	output.pos = pos;
 	output.world = input.world;
 	output.normal = input.normal;
+	output.lightDirection = lightPosition - input.world;
 
 	return output;
 }

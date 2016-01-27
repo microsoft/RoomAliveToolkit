@@ -56,7 +56,7 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = 64,
+                SizeInBytes = 80,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -106,6 +106,8 @@ namespace RoomAliveToolkit
             DataStream dataStream;
             deviceContext.MapSubresource(vertexShaderConstantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
             dataStream.PackedWrite(projection);
+            var lightPosition = new Vector3(0, 0, 0);
+            dataStream.PackedWrite(lightPosition);
             deviceContext.UnmapSubresource(vertexShaderConstantBuffer, 0);
         }
 

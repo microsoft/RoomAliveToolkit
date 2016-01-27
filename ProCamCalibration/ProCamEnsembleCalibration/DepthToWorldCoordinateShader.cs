@@ -15,13 +15,17 @@ namespace RoomAliveToolkit
             this.numCameras = numCameras;
 
             computeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/DepthCS.cso")));
+            toFloatComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.ToFloatCS.cso")));
+            bilateralFilterComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.BilateralFilterCS.cso")));
+            computeNormalsComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.ComputeNormalsCS.cso")));
+            intializeNormalsComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.InitializeNormals.cso")));
 
             // constant buffer
             var constantBufferDesc = new BufferDescription()
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = ConstantBuffer.size,
+                SizeInBytes = 80,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -50,12 +54,65 @@ namespace RoomAliveToolkit
                 SizeInBytes = Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6 * 4 * numCameras,
             };
             indexBuffer = new SharpDX.Direct3D11.Buffer(device, indexBufferDesc);
+
+            // float depth buffer
+            var floatDepthImageTextureDesc = new Texture2DDescription()
+            {
+                Width = Kinect2Calibration.depthImageWidth,
+                Height = Kinect2Calibration.depthImageHeight,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = SharpDX.DXGI.Format.R32_Float,
+                SampleDescription = new SharpDX.DXGI.SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.UnorderedAccess | BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.None,
+            };
+            floatDepthImageTexture = new Texture2D(device, floatDepthImageTextureDesc);
+            floatDepthImageUAV = new UnorderedAccessView(device, floatDepthImageTexture);
+            floatDepthImageSRV = new ShaderResourceView(device, floatDepthImageTexture);
+
+
+            floatDepthImageTexture2 = new Texture2D(device, floatDepthImageTextureDesc);
+            floatDepthImageUAV2 = new UnorderedAccessView(device, floatDepthImageTexture2);
+            floatDepthImageSRV2 = new ShaderResourceView(device, floatDepthImageTexture2);
+
+            // constant buffer
+            var bilateralFilterConstantBufferDesc = new BufferDescription()
+            {
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ConstantBuffer,
+                SizeInBytes = 16,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                StructureByteStride = 0,
+                OptionFlags = 0,
+            };
+            bilateralFilterConstantBuffer = new SharpDX.Direct3D11.Buffer(device, bilateralFilterConstantBufferDesc);
+
+            // upper and lower normals
+            var quadInfoStructuredBufferDesc = new BufferDescription()
+            {
+                Usage = ResourceUsage.Default,
+                CpuAccessFlags = CpuAccessFlags.None,
+                StructureByteStride = 32,
+                SizeInBytes = 512 * 484 * 32,
+                BindFlags = BindFlags.UnorderedAccess | BindFlags.ShaderResource,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+            };
+            quadInfoBuffer = new SharpDX.Direct3D11.Buffer(device, quadInfoStructuredBufferDesc);
+            quadInfoBufferUAV = new UnorderedAccessView(device, quadInfoBuffer);
+
         }
 
         int numCameras;
-        ComputeShader computeShader;
-        public SharpDX.Direct3D11.Buffer constantBuffer, vertexBuffer, indexBuffer;
+        ComputeShader computeShader, toFloatComputeShader, bilateralFilterComputeShader, computeNormalsComputeShader, intializeNormalsComputeShader;
+        public SharpDX.Direct3D11.Buffer constantBuffer, vertexBuffer, indexBuffer, bilateralFilterConstantBuffer;
         public VertexBufferBinding vertexBufferBinding;
+        public Texture2D floatDepthImageTexture, floatDepthImageTexture2;
+        public UnorderedAccessView floatDepthImageUAV, floatDepthImageUAV2;
+        public ShaderResourceView floatDepthImageSRV, floatDepthImageSRV2;
+        public SharpDX.Direct3D11.Buffer quadInfoBuffer;
+        public UnorderedAccessView quadInfoBufferUAV;
 
         public void Dispose()
         {
@@ -65,51 +122,87 @@ namespace RoomAliveToolkit
             indexBuffer.Dispose();
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = ConstantBuffer.size)]
-        unsafe struct ConstantBuffer
-        {
-            public const int size = 80; // multiple of 16
-
-            [FieldOffset(0)]
-            public fixed float world[16]; // 4-component padding
-            [FieldOffset(64)]
-            public uint indexOffset;
-        };
-
         public unsafe void SetConstants(DeviceContext deviceContext, Matrix world, int indexOffset)
         {
-            // hlsl matrices are default column order
-            var constants = new ConstantBuffer();
-            for (int i = 0, col = 0; col < 4; col++)
-                for (int row = 0; row < 4; row++)
-                    constants.world[i++] = (float) world[row, col];
-            constants.indexOffset = (uint) indexOffset;
-
             DataStream dataStream;
             deviceContext.MapSubresource(constantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-            dataStream.Write<ConstantBuffer>(constants);
+
+            dataStream.PackedWrite(world.ToSharp4x4());
+            dataStream.PackedWrite((uint)indexOffset);
+
             deviceContext.UnmapSubresource(constantBuffer, 0);
+        }
+
+        public unsafe void SetBilateralFilterConstants(DeviceContext deviceContext, float spatialSigma, float intensitySigma)
+        {
+            DataStream dataStream;
+            deviceContext.MapSubresource(bilateralFilterConstantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
+
+            dataStream.PackedWrite(1.0f / spatialSigma);
+            dataStream.PackedWrite(1.0f / intensitySigma);
+
+            deviceContext.UnmapSubresource(bilateralFilterConstantBuffer, 0);
         }
 
         public void UpdateCamera(DeviceContext deviceContext, ProjectorCameraEnsemble.Camera camera, CameraDeviceResource cameraDeviceResource)
         {
+            // convert to float
+            deviceContext.ComputeShader.Set(toFloatComputeShader);
+            deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV);
+            deviceContext.Dispatch(16, 22, 1);
+            deviceContext.ComputeShader.SetShaderResource(0, null);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
+
+
+            // bilateral filter
+            SetBilateralFilterConstants(deviceContext, 3.0f, 40.0f);
+            deviceContext.ComputeShader.SetConstantBuffer(0, bilateralFilterConstantBuffer);
+            deviceContext.ComputeShader.Set(bilateralFilterComputeShader);
+            deviceContext.ComputeShader.SetShaderResource(0, floatDepthImageSRV);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV2);
+            deviceContext.Dispatch(16, 22, 1);
+            deviceContext.ComputeShader.SetShaderResource(0, null);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
+
+
+            //// intialize normals
+            //deviceContext.ComputeShader.Set(intializeNormalsComputeShader);
+            //deviceContext.ComputeShader.SetUnorderedAccessView(0, cameraDeviceResource.vertexBufferUAV);
+            //deviceContext.Dispatch(16, 22, 1);
+            //deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
+
+
+            // world coordinates and index buffer
             int offset = cameraDeviceResource.cameraIndex * Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight;
             SetConstants(deviceContext, camera.pose, offset);
 
             deviceContext.ComputeShader.Set(computeShader);
             deviceContext.ComputeShader.SetConstantBuffer(0, constantBuffer);
-            deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
+            deviceContext.ComputeShader.SetShaderResource(0, floatDepthImageSRV2);
             deviceContext.ComputeShader.SetShaderResource(1, cameraDeviceResource.depthFrameToCameraSpaceTableTextureRV);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, cameraDeviceResource.vertexBufferUAV);
             deviceContext.ComputeShader.SetUnorderedAccessView(1, cameraDeviceResource.indexBufferUAV);
-
+            deviceContext.ComputeShader.SetUnorderedAccessView(2, quadInfoBufferUAV);
             deviceContext.Dispatch(16, 22, 1);
-
             deviceContext.ComputeShader.SetShaderResource(0, null);
             deviceContext.ComputeShader.SetShaderResource(1, null);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
             deviceContext.ComputeShader.SetUnorderedAccessView(1, null);
-            deviceContext.ComputeShader.Set(null);
+            deviceContext.ComputeShader.SetUnorderedAccessView(2, null);
+
+
+
+            // compute normals
+            deviceContext.ComputeShader.Set(computeNormalsComputeShader);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, cameraDeviceResource.vertexBufferUAV);
+            deviceContext.ComputeShader.SetUnorderedAccessView(1, quadInfoBufferUAV);
+            deviceContext.Dispatch(16, 22, 1);
+            deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
         }
     }
 }

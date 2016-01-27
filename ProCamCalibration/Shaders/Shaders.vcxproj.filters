@@ -50,5 +50,9 @@
     <FxCompile Include="BlendVS.hlsl" />
     <FxCompile Include="ColorDepthMapVS.hlsl" />
     <FxCompile Include="ColorDepthMapPS.hlsl" />
+    <FxCompile Include="Depth.ToFloatCS.hlsl" />
+    <FxCompile Include="Depth.BilateralFilterCS.hlsl" />
+    <FxCompile Include="Depth.ComputeNormalsCS.hlsl" />
+    <FxCompile Include="Depth.InitializeNormals.hlsl" />
   </ItemGroup>
 </Project>

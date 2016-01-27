@@ -18,33 +18,39 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	float3 normal = 0;
 	float sum = 0;
 
+
 	// 0
-	normal += quadInfo[DTid.y * depthImageWidth + DTid.x].upperNormal;
-	sum += quadInfo[DTid.y * depthImageWidth + DTid.x].upperNormalValid;
+	uint index0 = DTid.y * depthImageWidth + DTid.x;
+	normal += quadInfo[index0].upperNormal;
+	sum += quadInfo[index0].upperNormalValid;
 
 	// 1
-	normal += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x].lowerNormal;
-	sum += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x].lowerNormalValid;
+	uint index1 = (DTid.y - 1) * depthImageWidth + DTid.x;
+	normal += quadInfo[index1].lowerNormal;
+	sum += quadInfo[index1].lowerNormalValid;
 
 	// 2
-	normal += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x].upperNormal;
-	sum += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x].upperNormalValid;
+	uint index2 = (DTid.y - 1) * depthImageWidth + DTid.x;
+	normal += quadInfo[index2].upperNormal;
+	sum += quadInfo[index2].upperNormalValid;
 
 	// 3
-	normal += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x - 1].lowerNormal;
-	sum += quadInfo[(DTid.y - 1) * depthImageWidth + DTid.x - 1].lowerNormalValid;
+	uint index3 = (DTid.y - 1) * depthImageWidth + DTid.x - 1;
+	normal += quadInfo[index3].lowerNormal;
+	sum += quadInfo[index3].lowerNormalValid;
 
 	// 4
-	normal += quadInfo[DTid.y * depthImageWidth + DTid.x - 1].upperNormal;
-	sum += quadInfo[DTid.y * depthImageWidth + DTid.x - 1].upperNormalValid;
+	uint index4 = DTid.y * depthImageWidth + DTid.x - 1;
+	normal += quadInfo[index4].upperNormal;
+	sum += quadInfo[index4].upperNormalValid;
 
 	// 5
-	normal += quadInfo[DTid.y * depthImageWidth + DTid.x - 1].lowerNormal;
-	sum += quadInfo[DTid.y * depthImageWidth + DTid.x - 1].lowerNormalValid;
+	uint index5 = DTid.y * depthImageWidth + DTid.x - 1;
+	normal += quadInfo[index5].lowerNormal;
+	sum += quadInfo[index5].lowerNormalValid;
 
 	normal /= sum;
 
 
-	uint index = DTid.y * depthImageWidth + DTid.x;
-	worldCoordinates.Store3(index * 24 + 12, asuint(normal));
+	worldCoordinates.Store3(index0 * 24 + 12, asuint(normal));
 }

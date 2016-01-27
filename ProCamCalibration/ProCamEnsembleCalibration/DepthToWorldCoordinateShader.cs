@@ -144,23 +144,29 @@ namespace RoomAliveToolkit
             deviceContext.UnmapSubresource(bilateralFilterConstantBuffer, 0);
         }
 
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
         public void UpdateCamera(DeviceContext deviceContext, ProjectorCameraEnsemble.Camera camera, CameraDeviceResource cameraDeviceResource)
         {
-            // convert to float
-            deviceContext.ComputeShader.Set(toFloatComputeShader);
-            deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
-            deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV);
-            deviceContext.Dispatch(16, 22, 1);
-            deviceContext.ComputeShader.SetShaderResource(0, null);
-            deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
 
+            //stopwatch.Restart();
 
+            //// convert to float
+            //deviceContext.ComputeShader.Set(toFloatComputeShader);
+            //deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
+            //deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV);
+            //deviceContext.Dispatch(16, 22, 1);
+            //deviceContext.ComputeShader.SetShaderResource(0, null);
+            //deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
+            //Console.Write("\t" + stopwatch.ElapsedTicks);
+            stopwatch.Restart();
 
             // bilateral filter
             SetBilateralFilterConstants(deviceContext, 3.0f, 40.0f);
             deviceContext.ComputeShader.SetConstantBuffer(0, bilateralFilterConstantBuffer);
             deviceContext.ComputeShader.Set(bilateralFilterComputeShader);
-            deviceContext.ComputeShader.SetShaderResource(0, floatDepthImageSRV);
+            deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV2);
             deviceContext.Dispatch(16, 22, 1);
             deviceContext.ComputeShader.SetShaderResource(0, null);
@@ -174,6 +180,8 @@ namespace RoomAliveToolkit
             //deviceContext.Dispatch(16, 22, 1);
             //deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
 
+            Console.Write("\t" + stopwatch.ElapsedTicks);
+            stopwatch.Restart();
 
 
             // world coordinates and index buffer
@@ -194,6 +202,8 @@ namespace RoomAliveToolkit
             deviceContext.ComputeShader.SetUnorderedAccessView(1, null);
             deviceContext.ComputeShader.SetUnorderedAccessView(2, null);
 
+            Console.Write("\t" + stopwatch.ElapsedTicks);
+            stopwatch.Restart();
 
 
             // compute normals
@@ -202,6 +212,12 @@ namespace RoomAliveToolkit
             deviceContext.ComputeShader.SetUnorderedAccessView(1, quadInfoBufferUAV);
             deviceContext.Dispatch(16, 22, 1);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+
+
+            Console.Write("\t" + stopwatch.ElapsedTicks);
+
+            Console.WriteLine();
+
 
         }
     }

@@ -121,6 +121,8 @@ namespace RoomAliveToolkit
         Object renderLock = new Object();
         FrameRate frameRate = new FrameRate(2000);
 
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
         void RenderLoop()
         {
             while (true)
@@ -135,10 +137,14 @@ namespace RoomAliveToolkit
                     {
                         var deviceContext = device.ImmediateContext;
 
+                        stopwatch.Restart();
+
                         // fill our vertex/index buffer with world coordinate transformed vertices over all cameras
                         // TODO: this should be done only if the corresponding depth image or world transform has changed
                         foreach (var camera in ensemble.cameras)
                             depthToWorldCoordinateShader.UpdateCamera(deviceContext, camera, cameraDeviceResources[camera]);
+
+                        Console.WriteLine("total = " + (float)stopwatch.ElapsedTicks / System.Diagnostics.Stopwatch.Frequency * 1000f);
 
                         // for dynamic blending
                         depthMapShader.Render(deviceContext, ensemble.projectors, ensemble.cameras.Count, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);

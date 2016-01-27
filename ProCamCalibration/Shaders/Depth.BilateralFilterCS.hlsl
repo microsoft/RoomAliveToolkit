@@ -1,4 +1,4 @@
-Texture2D<float> input : register(t0);
+Texture2D<uint> input : register(t0);
 RWTexture2D<float> output : register(u0);
 
 cbuffer constants : register(b0)
@@ -31,6 +31,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 			float value = input[DTid.xy + int2(dx, dy)];
 			// TODO: gaussians can be combined to avoid a call to exp (lift dy first?): exp(x)*exp(y) = exp(x+y)
 			float weight = Gaussian(dx, spatialSigma) * Gaussian(dy, spatialSigma) * Gaussian(value - value0, intensitySigma);
+
 			sum += weight * value;
 			sumWeights += weight;
 		}

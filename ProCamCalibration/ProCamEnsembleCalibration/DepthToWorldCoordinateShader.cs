@@ -25,7 +25,7 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = 80,
+                SizeInBytes = 16,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -82,7 +82,7 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = 16,
+                SizeInBytes = 80,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -94,8 +94,8 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Default,
                 CpuAccessFlags = CpuAccessFlags.None,
-                StructureByteStride = 32,
-                SizeInBytes = 512 * 484 * 32,
+                StructureByteStride = 24,
+                SizeInBytes = 512 * 484 * 24,
                 BindFlags = BindFlags.UnorderedAccess | BindFlags.ShaderResource,
                 OptionFlags = ResourceOptionFlags.BufferStructured,
             };
@@ -127,19 +127,21 @@ namespace RoomAliveToolkit
             DataStream dataStream;
             deviceContext.MapSubresource(constantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
 
-            dataStream.PackedWrite(world.ToSharp4x4());
+            //dataStream.PackedWrite(world.ToSharp4x4());
             dataStream.PackedWrite((uint)indexOffset);
 
             deviceContext.UnmapSubresource(constantBuffer, 0);
         }
 
-        public unsafe void SetBilateralFilterConstants(DeviceContext deviceContext, float spatialSigma, float intensitySigma)
+        public unsafe void SetBilateralFilterConstants(DeviceContext deviceContext, Matrix world, float spatialSigma, float intensitySigma)
         {
             DataStream dataStream;
             deviceContext.MapSubresource(bilateralFilterConstantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
 
-            dataStream.PackedWrite(1.0f / spatialSigma);
-            dataStream.PackedWrite(1.0f / intensitySigma);
+            dataStream.PackedWrite(world.ToSharp4x4());
+
+            dataStream.PackedWrite((1.0f / spatialSigma)*(1.0f / spatialSigma));
+            dataStream.PackedWrite((1.0f / intensitySigma)*(1.0f / intensitySigma));
 
             deviceContext.UnmapSubresource(bilateralFilterConstantBuffer, 0);
         }
@@ -148,40 +150,24 @@ namespace RoomAliveToolkit
 
         public void UpdateCamera(DeviceContext deviceContext, ProjectorCameraEnsemble.Camera camera, CameraDeviceResource cameraDeviceResource)
         {
-
             //stopwatch.Restart();
 
-            //// convert to float
-            //deviceContext.ComputeShader.Set(toFloatComputeShader);
-            //deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
-            //deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV);
-            //deviceContext.Dispatch(16, 22, 1);
-            //deviceContext.ComputeShader.SetShaderResource(0, null);
-            //deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
-
-            //Console.Write("\t" + stopwatch.ElapsedTicks);
-            stopwatch.Restart();
-
             // bilateral filter
-            SetBilateralFilterConstants(deviceContext, 3.0f, 40.0f);
+            SetBilateralFilterConstants(deviceContext, camera.pose, 3.0f, 40.0f);
             deviceContext.ComputeShader.SetConstantBuffer(0, bilateralFilterConstantBuffer);
             deviceContext.ComputeShader.Set(bilateralFilterComputeShader);
             deviceContext.ComputeShader.SetShaderResource(0, cameraDeviceResource.depthImageTextureRV);
+            deviceContext.ComputeShader.SetShaderResource(1, cameraDeviceResource.depthFrameToCameraSpaceTableTextureRV);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, floatDepthImageUAV2);
+            deviceContext.ComputeShader.SetUnorderedAccessView(1, cameraDeviceResource.vertexBufferUAV);
             deviceContext.Dispatch(16, 22, 1);
             deviceContext.ComputeShader.SetShaderResource(0, null);
+            deviceContext.ComputeShader.SetShaderResource(1, null);
             deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
+            deviceContext.ComputeShader.SetUnorderedAccessView(1, null);
 
-
-
-            //// intialize normals
-            //deviceContext.ComputeShader.Set(intializeNormalsComputeShader);
-            //deviceContext.ComputeShader.SetUnorderedAccessView(0, cameraDeviceResource.vertexBufferUAV);
-            //deviceContext.Dispatch(16, 22, 1);
-            //deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
-
-            Console.Write("\t" + stopwatch.ElapsedTicks);
-            stopwatch.Restart();
+            //Console.Write("\t" + stopwatch.ElapsedTicks);
+            //stopwatch.Restart();
 
 
             // world coordinates and index buffer
@@ -202,8 +188,8 @@ namespace RoomAliveToolkit
             deviceContext.ComputeShader.SetUnorderedAccessView(1, null);
             deviceContext.ComputeShader.SetUnorderedAccessView(2, null);
 
-            Console.Write("\t" + stopwatch.ElapsedTicks);
-            stopwatch.Restart();
+            ////Console.Write("\t" + stopwatch.ElapsedTicks);
+            ////stopwatch.Restart();
 
 
             // compute normals
@@ -214,9 +200,9 @@ namespace RoomAliveToolkit
             deviceContext.ComputeShader.SetUnorderedAccessView(0, null);
 
 
-            Console.Write("\t" + stopwatch.ElapsedTicks);
+            //Console.Write("\t" + stopwatch.ElapsedTicks);
 
-            Console.WriteLine();
+            //Console.WriteLine();
 
 
         }

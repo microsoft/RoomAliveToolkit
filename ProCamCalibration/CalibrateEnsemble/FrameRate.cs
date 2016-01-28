@@ -5,7 +5,7 @@ namespace RoomAliveToolkit
 {
     public class FrameRate
     {
-        public FrameRate(long intervalMilliseconds) : this(intervalMilliseconds, "Framerate = {0:0.00}") {}
+        public FrameRate(long intervalMilliseconds) : this(intervalMilliseconds, "Framerate = {0:0.00}Hz ({1:0.00}ms/frame)") {}
 
         public FrameRate(long intervalMilliseconds, string formatString)
         {
@@ -41,7 +41,7 @@ namespace RoomAliveToolkit
 
         public override string ToString()
         {
-            return String.Format(formatString, frameRate);
+            return String.Format(formatString, frameRate, 1.0f/frameRate*1000);
         }
 
         public float frameRate = 0;

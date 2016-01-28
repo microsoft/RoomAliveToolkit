@@ -1,21 +1,20 @@
 Texture2D<uint> input : register(t0);
 RWTexture2D<float> output : register(u0);
+Texture2D<float2> depthFrameToCameraSpaceTable : register(t1);
+// can't create a structured buffer that is also a vertex buffer, so we use byte address buffers:
+RWByteAddressBuffer worldCoordinates : register(u1);
 
 cbuffer constants : register(b0)
 {
-	float spatialSigma; // pixels, 1/sigma
-	float intensitySigma; // m, 1/sigma
+	matrix world;
+	float spatialSigmaSq; // pixels, 1/sigma
+	float intensitySigmaSq; // m, 1/sigma
 }
 
 #define PI 3.14159265358979323846
 
-float Gaussian(float x, float sigma)
-{
-	float y = x * sigma; // 1/sigma
-	return sigma / (sqrt(2 * PI)) * exp(-0.5*y*y); // lift exp(-0.5)?
-}
-
-#define halfWidth 4
+static const int depthImageWidth = 512;
+#define halfWidth 3
 
 [numthreads(32, 22, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
@@ -23,19 +22,30 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	float sum = 0;
 	float sumWeights = 0;
 
-	float value0 = input[DTid.xy];
+	float depth0 = input[DTid.xy];
 
 	for (int dy = -halfWidth; dy <= halfWidth; dy++)
 		for (int dx = -halfWidth; dx <= halfWidth; dx++)
 		{
-			float value = input[DTid.xy + int2(dx, dy)];
-			// TODO: gaussians can be combined to avoid a call to exp (lift dy first?): exp(x)*exp(y) = exp(x+y)
-			float weight = Gaussian(dx, spatialSigma) * Gaussian(dy, spatialSigma) * Gaussian(value - value0, intensitySigma);
+			float depth = input[DTid.xy + int2(dx, dy)];
 
-			sum += weight * value;
+			float dDepth = (depth - depth0);
+			float weight = exp(-0.5*(spatialSigmaSq*(dx*dx + dy*dy) + intensitySigmaSq*dDepth*dDepth));
+
+			sum += weight * depth;
 			sumWeights += weight;
 		}
-	sum /= sumWeights;
 
-	output[DTid.xy] = sum;
+	float filteredDepth = sum / sumWeights;
+
+	output[DTid.xy] = filteredDepth;
+
+	// world coordinate
+	float2 undistorted = depthFrameToCameraSpaceTable[DTid.xy];
+	float depthMeters = filteredDepth / 1000; // m
+	float4 depthCamera = float4(undistorted*depthMeters, depthMeters, 1);
+	float4 pos = mul(world, depthCamera);
+
+	uint index = DTid.y * depthImageWidth + DTid.x;
+	worldCoordinates.Store3(index * 24, asuint(pos.xyz));
 }

@@ -23,7 +23,7 @@ VSOutput main(VSInput input)
 	// view volume
 	float4 world4 = float4(input.world, 1);
 	float4 pos = mul(world4, viewProjection);
-
+	
 	VSOutput output;
 	output.pos = pos;
 	output.world = input.world;

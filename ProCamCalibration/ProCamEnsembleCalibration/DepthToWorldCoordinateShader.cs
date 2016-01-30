@@ -15,10 +15,8 @@ namespace RoomAliveToolkit
             this.numCameras = numCameras;
 
             computeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/DepthCS.cso")));
-            toFloatComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.ToFloatCS.cso")));
             bilateralFilterComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.BilateralFilterCS.cso")));
             computeNormalsComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.ComputeNormalsCS.cso")));
-            intializeNormalsComputeShader = new ComputeShader(device, new ShaderBytecode(File.ReadAllBytes("Content/Depth.InitializeNormals.cso")));
 
             // constant buffer
             var constantBufferDesc = new BufferDescription()
@@ -105,7 +103,7 @@ namespace RoomAliveToolkit
         }
 
         int numCameras;
-        ComputeShader computeShader, toFloatComputeShader, bilateralFilterComputeShader, computeNormalsComputeShader, intializeNormalsComputeShader;
+        ComputeShader computeShader, bilateralFilterComputeShader, computeNormalsComputeShader;
         public SharpDX.Direct3D11.Buffer constantBuffer, vertexBuffer, indexBuffer, bilateralFilterConstantBuffer;
         public VertexBufferBinding vertexBufferBinding;
         public Texture2D floatDepthImageTexture, floatDepthImageTexture2;

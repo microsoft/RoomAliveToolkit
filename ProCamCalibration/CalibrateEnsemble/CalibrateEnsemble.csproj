@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B039A60C-F8C6-4CF3-AECD-CCD6F7268CEA}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RoomAliveToolkit</RootNamespace>
     <AssemblyName>CalibrateEnsemble</AssemblyName>
@@ -164,14 +164,6 @@
       <Link>Content\DepthMapVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\BlendPS.cso">
-      <Link>Content\BlendPS.cso</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\x64\Debug\BlendVS.cso">
-      <Link>Content\BlendVS.cso</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\x64\Debug\ColorDepthMapPS.cso">
       <Link>Content\ColorDepthMapPS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -184,16 +176,24 @@
       <Link>Content\Depth.BilateralFilterCS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\Depth.ToFloatCS.cso">
-      <Link>Content\Depth.ToFloatCS.cso</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\x64\Debug\Depth.ComputeNormalsCS.cso">
       <Link>Content\Depth.ComputeNormalsCS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\x64\Debug\Depth.InitializeNormals.cso">
-      <Link>Content\Depth.InitializeNormals.cso</Link>
+    <Content Include="..\x64\Debug\VizPS.cso">
+      <Link>Content\VizPS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\VizVS.cso">
+      <Link>Content\VizVS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\BlendPS.cso">
+      <Link>Content\BlendPS.cso</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\x64\Debug\BlendVS.cso">
+      <Link>Content\BlendVS.cso</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="App.config" />

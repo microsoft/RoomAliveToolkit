@@ -66,6 +66,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
 	// indices
 	uint index2 = index00 + indexOffset; // each camera is 512*484*6 vertices
-	indices.Store3(index00 * 24, upperValid * uint3(index2, index2 + depthImageWidth, index2 + 1)); // 00, 01, 10
-	indices.Store3(index00 * 24 + 12, lowerValid * uint3(index2 + depthImageWidth + 1, index2 + 1, index2 + depthImageWidth)); // 11, 10, 10
+	indices.Store3(index00 * 24, index2 + upperValid * uint3(0, depthImageWidth, 1)); // 00, 01, 10
+	indices.Store3(index00 * 24 + 12, index2 + lowerValid * uint3(depthImageWidth + 1, 1, depthImageWidth)); // 11, 10, 01
 }

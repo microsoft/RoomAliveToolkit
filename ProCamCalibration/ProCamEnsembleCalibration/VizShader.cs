@@ -10,13 +10,13 @@ using Device = SharpDX.Direct3D11.Device;
 
 namespace RoomAliveToolkit
 {
-    public class BlendShader : IDisposable
+    public class VizShader : IDisposable
     {
-        public BlendShader(Device device)
+        public VizShader(Device device)
         {
-            var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/BlendVS.cso"));
+            var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/VizVS.cso"));
             vertexShader = new VertexShader(device, shaderByteCode);
-            pixelShader = new PixelShader(device, new ShaderBytecode(File.ReadAllBytes("Content/BlendPS.cso")));
+            pixelShader = new PixelShader(device, new ShaderBytecode(File.ReadAllBytes("Content/VizPS.cso")));
 
             // depth stencil state
             var depthStencilStateDesc = new DepthStencilStateDescription()
@@ -152,7 +152,8 @@ namespace RoomAliveToolkit
                 dataStream.PackedWrite(viewProjection);
 
                 // projectorColor
-                var color = new Vector3(0, 0, 0);
+                var projectorColor = HSV2RGB(new float[] { (float)projectors.IndexOf(projector) / (float)projectors.Count, 0.3f, 1});
+                var color = new Vector3(projectorColor);
                 dataStream.PackedWrite(color);
             }
 
@@ -241,6 +242,169 @@ namespace RoomAliveToolkit
 
         }
 
+        public float[] HSV2RGB(float[] hsv)
+        {
+            float[] color = new float[3];
+            for (int ii = 0; ii < 3; ii++)
+                color[ii] = 0;
+            float f, p, q, t;
+            float h, s, v;
+            float r = 0, g = 0, b = 0;
+            float i;
+            if (hsv[1] == 0)
+            {
+                if (hsv[2] != 0)
+                {
+                    color[0] = color[1] = color[2] = hsv[2];
+                }
+            }
+            else
+            {
+                h = hsv[0] * 360.0f;
+                s = hsv[1];
+                v = hsv[2];
+                if (h == 360.0)
+                {
+                    h = 0;
+                }
+                h /= 60;
+                i = (float) Math.Floor(h);
+                f = h - i;
+                p = v * (1.0f - s);
+                q = v * (1.0f - (s * f));
+                t = v * (1.0f - (s * (1.0f - f)));
+                if (i == 0)
+                {
+                    r = v;
+                    g = t;
+                    b = p;
+                }
+                else if (i == 1)
+                {
+                    r = q;
+                    g = v;
+                    b = p;
+                }
+                else if (i == 2)
+                {
+                    r = p;
+                    g = v;
+                    b = t;
+                }
+                else if (i == 3)
+                {
+                    r = p;
+                    g = q;
+                    b = v;
+                }
+                else if (i == 4)
+                {
+                    r = t;
+                    g = p;
+                    b = v;
+                }
+                else if (i == 5)
+                {
+                    r = v;
+                    g = p;
+                    b = q;
+                }
+                color[0] = r;
+                color[1] = g;
+                color[2] = b;
+            }
+            return color;
+        }
+
+
+    }
+
+    public static class SharpDXConversions
+    {
+        public static SharpDX.Matrix ToSharp4x4(this Matrix m)
+        {
+            var output = new SharpDX.Matrix();
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    output[i, j] = (float)m[i, j];
+            return output;
+        }
+    }
+
+
+    // HLSL variables are on 4-byte boundaries; additionally, a variable may not cross a 4-component vector (16 bytes);
+    // arrays are not packed; every element is stored on a 4-component vector (applies to array of struct, too).
+    public static class HLSLPackedDataStreamExtensions
+    {
+        // unconditionally advance to the next 4-component value;
+        // this can be useful if writing out an array manually
+        public static void NextVector(this DataStream dataStream)
+        {
+            int bytesRemaining = 16 - (int)dataStream.Position % 16;
+            for (int i = 0; i < bytesRemaining; i++)
+                dataStream.WriteByte(0);
+        }
+
+        // advance to the next 4-component value if a value of a given size would cross a 16-byte boundary;
+        static void NextVector(this DataStream dataStream, int sizeBytes)
+        {
+            sizeBytes = Math.Min(sizeBytes, 16);
+            int bytesRemaining = 16 - (int)dataStream.Position % 16;
+            if (sizeBytes > bytesRemaining)
+                for (int i = 0; i < bytesRemaining; i++)
+                    dataStream.WriteByte(0);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, float value)
+        {
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, int value)
+        {
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, uint value)
+        {
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, SharpDX.Matrix value)
+        {
+            dataStream.NextVector(4 * 4);
+            // hlsl matrices are stored column major by default
+            for (int col = 0; col < 4; col++)
+                for (int row = 0; row < 4; row++)
+                    dataStream.Write(value[row, col]);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, SharpDX.Vector2 value)
+        {
+            dataStream.NextVector(2 * 4);
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, SharpDX.Vector3 value)
+        {
+            dataStream.NextVector(3 * 4);
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, SharpDX.Vector4 value)
+        {
+            dataStream.NextVector(4 * 4);
+            dataStream.Write(value);
+        }
+
+        public static void PackedWrite(this DataStream dataStream, float[] value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                dataStream.NextVector();
+                dataStream.Write(value[i]);
+            }
+        }
 
     }
 

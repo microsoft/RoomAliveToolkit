@@ -11,10 +11,10 @@ namespace RoomAliveToolkit
         public ConsoleTextBox()
         {
             InitializeComponent();
-            //consoleRedirection = new ConsoleRedirection(richTextBox1);
-            //Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-            //Debug.AutoFlush = true;
-            //Console.SetOut(consoleRedirection);
+            consoleRedirection = new ConsoleRedirection(richTextBox1);
+            Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Debug.AutoFlush = true;
+            Console.SetOut(consoleRedirection);
         }
     }
     public class ConsoleRedirection : TextWriter

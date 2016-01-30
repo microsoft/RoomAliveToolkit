@@ -201,3 +201,6 @@ FakesAssemblies/
 /ProCamCalibration/ProjectionMappingSample/Content/RadialWobblePS.cso
 /ProCamCalibration/Shaders/Kinect2GS2listing.txt
 /ProCamCalibration/Shaders/Kinect2VS2listing.txt
+
+*.VC.opendb
+

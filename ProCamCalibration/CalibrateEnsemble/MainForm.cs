@@ -76,7 +76,7 @@ namespace RoomAliveToolkit
 
             // shaders
             depthAndColorShader = new DepthAndColorCameraShader(device);
-            blendShader = new BlendShader(device);
+            blendShader = new VizShader(device);
 
             manipulator = new Manipulator(videoPanel1);
 
@@ -112,7 +112,7 @@ namespace RoomAliveToolkit
         DepthStencilView depthStencilView;
         Viewport viewport;
         DepthAndColorCameraShader depthAndColorShader;
-        BlendShader blendShader;
+        VizShader blendShader;
         DepthToWorldCoordinateShader depthToWorldCoordinateShader;
         DepthMapShader depthMapShader;
         ColorDepthMapShader colorDepthMapShader;

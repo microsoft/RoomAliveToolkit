@@ -695,6 +695,24 @@ namespace RoomAliveToolkit
             new System.Threading.Thread(AcquireDepthAndColor).Start();
         }
 
+        private void decodeGrayCodesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            calibrateToolStripMenuItem.Enabled = false;
+            new System.Threading.Thread(DecodeGrayCodes).Start();
+        }
+
+        private void calibrateProjectorGroupsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            calibrateToolStripMenuItem.Enabled = false;
+            new System.Threading.Thread(CalibrateProjectorGroups).Start();
+        }
+
+        private void optimizePoseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            calibrateToolStripMenuItem.Enabled = false;
+            new System.Threading.Thread(OptimizePose).Start();
+        }
+
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var newDialog = new NewDialog();
@@ -1121,6 +1139,44 @@ namespace RoomAliveToolkit
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
 
+        void DecodeGrayCodes()
+        {
+            ensemble.DecodeGrayCodeImages(directory);
+            Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
+        }
+
+        void CalibrateProjectorGroups()
+        {
+            try
+            {
+                ensemble.CalibrateProjectorGroups(directory);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Solve failed\n" + e);
+            }
+            Console.WriteLine("Solve complete");
+            unsavedChanges = true;
+            Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
+        }
+
+        void OptimizePose()
+        {
+            try
+            {
+                //TODO: not sure if this works if just loaded from file; since UnifyPose is the first step
+                // and the various pose members may not be set
+                ensemble.OptimizePose();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Solve failed\n" + e);
+            }
+            Console.WriteLine("Solve complete");
+            unsavedChanges = true;
+            Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
+        }
+
         void AcquireDepthAndColor()
         {
             try
@@ -1135,6 +1191,7 @@ namespace RoomAliveToolkit
             Console.WriteLine("Acquire Depth and Color complete");
             Invoke((Action)delegate { calibrateToolStripMenuItem.Enabled = true; });
         }
+
 
         // could be method on Projector:
         void SetViewProjectionFromProjector(ProjectorCameraEnsemble.Projector projector)

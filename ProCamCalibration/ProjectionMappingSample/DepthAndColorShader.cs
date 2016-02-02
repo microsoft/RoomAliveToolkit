@@ -293,7 +293,7 @@ namespace RoomAliveToolkit
         SamplerState colorSamplerState;
         SharpDX.Direct3D11.Buffer constantBuffer; 
         BilateralFilter bilateralFilter;
-        FromUIntPS fromUIntPS;
+        //FromUIntPS fromUIntPS;
         Texture2D filteredDepthImageTexture, filteredDepthImageTexture2;
         RenderTargetView filteredRenderTargetView, filteredRenderTargetView2;
         ShaderResourceView filteredDepthImageSRV, filteredDepthImageSRV2;

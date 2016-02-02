@@ -79,7 +79,8 @@ namespace RoomAliveToolkit
             // J'*J
             var JtJ = new Matrix(parameters.Size, parameters.Size);
             //stopWatch.Restart();
-            JtJ.MultATA(J, J); // this is the big calculation that could be parallelized
+            //JtJ.MultATA(J, J); // this is the big calculation that could be parallelized
+            JtJ.MultATAParallel(J, J);
             //Console.WriteLine("JtJ: J size {0}x{1} {2}ms", J.Rows, J.Cols, stopWatch.ElapsedMilliseconds);
 
             // J'*error

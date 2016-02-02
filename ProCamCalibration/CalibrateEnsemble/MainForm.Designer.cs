@@ -52,6 +52,9 @@
             this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.liveViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.wireframeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cameraFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.projectorFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.perspectiveAtOriginToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
@@ -239,6 +242,9 @@
             // 
             this.renderToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.liveViewToolStripMenuItem,
+            this.wireframeToolStripMenuItem,
+            this.cameraFrustumsToolStripMenuItem,
+            this.projectorFrustumsToolStripMenuItem,
             this.toolStripSeparator2});
             this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
             this.renderToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
@@ -247,14 +253,35 @@
             // liveViewToolStripMenuItem
             // 
             this.liveViewToolStripMenuItem.Name = "liveViewToolStripMenuItem";
-            this.liveViewToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.liveViewToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.liveViewToolStripMenuItem.Text = "Live View";
             this.liveViewToolStripMenuItem.Click += new System.EventHandler(this.liveViewToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(120, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
+            // 
+            // wireframeToolStripMenuItem
+            // 
+            this.wireframeToolStripMenuItem.Name = "wireframeToolStripMenuItem";
+            this.wireframeToolStripMenuItem.Size = new System.Drawing.Size(74, 20);
+            this.wireframeToolStripMenuItem.Text = "Wireframe";
+            this.wireframeToolStripMenuItem.Click += new System.EventHandler(this.wireframeViewToolStripMenuItem_Click);
+            // 
+            // cameraFrustumsToolStripMenuItem
+            // 
+            this.cameraFrustumsToolStripMenuItem.Name = "cameraFrustumsToolStripMenuItem";
+            this.cameraFrustumsToolStripMenuItem.Size = new System.Drawing.Size(112, 20);
+            this.cameraFrustumsToolStripMenuItem.Text = "Camera Frustums";
+            this.cameraFrustumsToolStripMenuItem.Click += new System.EventHandler(this.cameraFrustumToolStripMenuItem_Click);
+            // 
+            // projectorFrustumsToolStripMenuItem
+            // 
+            this.projectorFrustumsToolStripMenuItem.Name = "projectorFrustumsToolStripMenuItem";
+            this.projectorFrustumsToolStripMenuItem.Size = new System.Drawing.Size(119, 20);
+            this.projectorFrustumsToolStripMenuItem.Text = "Projector Frustums";
+            this.projectorFrustumsToolStripMenuItem.Click += new System.EventHandler(this.projectorFrustumToolStripMenuItem_Click);
             // 
             // viewToolStripMenuItem
             // 
@@ -402,5 +429,8 @@
         private System.Windows.Forms.ToolStripMenuItem decodeGrayCodesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem calibrateProjectorGroupsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optimizePoseToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem wireframeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cameraFrustumsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem projectorFrustumsToolStripMenuItem;
     }
 }

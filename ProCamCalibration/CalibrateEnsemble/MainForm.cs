@@ -93,16 +93,7 @@ namespace RoomAliveToolkit
             };
             depthStencilState = new DepthStencilState(device, depthStencilStateDesc);
 
-            // rasterizer states
-            var rasterizerStateDesc = new RasterizerStateDescription()
-            {
-                CullMode = CullMode.None, // beware what this does to both shaders
-                FillMode = FillMode.Solid,
-                IsDepthClipEnabled = true,
-                IsFrontCounterClockwise = true,
-                IsMultisampleEnabled = true,
-            };
-            rasterizerState = new RasterizerState(device, rasterizerStateDesc);
+            UpdateRasterizerState();
 
             // color sampler state
             var colorSamplerStateDesc = new SamplerStateDescription()
@@ -158,6 +149,23 @@ namespace RoomAliveToolkit
             splitContainer1.SplitterDistance = Properties.Settings.Default.SplitterDistance;
 
             new System.Threading.Thread(RenderLoop).Start();
+        }
+
+        private void UpdateRasterizerState()
+        {
+            lock (renderLock)
+            {
+                // rasterizer states
+                var rasterizerStateDesc = new RasterizerStateDescription()
+                {
+                    CullMode = CullMode.None, // beware what this does to both shaders
+                    FillMode = wireframe ? FillMode.Wireframe : FillMode.Solid,
+                    IsDepthClipEnabled = true,
+                    IsFrontCounterClockwise = true,
+                    IsMultisampleEnabled = true,
+                };
+                rasterizerState = new RasterizerState(device, rasterizerStateDesc);
+            }
         }
 
         SharpDX.Direct3D11.Device device;
@@ -502,12 +510,16 @@ namespace RoomAliveToolkit
             // hlsl matrices are default column order
             var constants = new ConstantBuffer();
             for (int i = 0, col = 0; col < 4; col++)
+            {
                 for (int row = 0; row < 4; row++)
                 {
                     constants.projection[i] = projection[row, col];
                     constants.depthToColorTransform[i] = (float)kinect2Calibration.depthToColorTransform[row, col];
                     i++;
                 }
+            }
+
+
             constants.f[0] = (float)kinect2Calibration.colorCameraMatrix[0, 0];
             constants.f[1] = (float)kinect2Calibration.colorCameraMatrix[1, 1];
             constants.c[0] = (float)kinect2Calibration.colorCameraMatrix[0, 2];
@@ -533,7 +545,6 @@ namespace RoomAliveToolkit
                     view = manipulator.Update();
 
                     var deviceContext = device.ImmediateContext;
-
                     deviceContext.InputAssembler.InputLayout = vertexInputLayout;
                     deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
                     deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
@@ -909,6 +920,28 @@ namespace RoomAliveToolkit
             liveViewToolStripMenuItem.Checked = live;
         }
 
+        bool wireframe = false;
+        private void wireframeViewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            wireframe = !wireframe;
+            wireframeToolStripMenuItem.Checked = wireframe;
+            UpdateRasterizerState();
+        }
+
+        bool renderCameraFrustums = false;
+        private void cameraFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderCameraFrustums = !renderCameraFrustums;
+            cameraFrustumsToolStripMenuItem.Checked = renderCameraFrustums;
+        }
+
+        bool renderProjectorFrustums = false;
+        private void projectorFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderProjectorFrustums = !renderProjectorFrustums;
+            projectorFrustumsToolStripMenuItem.Checked = renderCameraFrustums;
+        }
+
         private void videoPanel1_SizeChanged(object sender, EventArgs e)
         {
             // TODO: look into using this as initial creation
@@ -1094,6 +1127,7 @@ namespace RoomAliveToolkit
                 {
                     ensemble = ProjectorCameraEnsemble.FromFile(path);
                     Console.WriteLine("Loaded " + path);
+                    Console.WriteLine("Containing: {0} camera(s), {1} projector(s)", ensemble.cameras.Count, ensemble.projectors.Count);
                 }
                 catch (Exception ex)
                 {

@@ -10,7 +10,6 @@ struct VSOutput
 	float4 pos : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float depth : MYSEMANTIC;
-	float4 worldPos : TEXCOORD1;
 };
 
 cbuffer constants : register(b0)
@@ -20,8 +19,6 @@ cbuffer constants : register(b0)
 	matrix userWorldViewProjection;
 	// world is depth camera's pose; view and projection are that of the projector
 	matrix projectorWorldViewProjection;
-
-	float globalTime;
 }
 
 // Input vertices are setup so that xy are the entries of the table 
@@ -55,7 +52,6 @@ VSOutput main(VSInput input)
 	output.pos = pos;
 	output.tex = userViewTex.xy;
 	output.depth = depth; // passed to geometry shader to cull invalid triangles
-	output.worldPos = depthCamera;
 
 	return output;
 }

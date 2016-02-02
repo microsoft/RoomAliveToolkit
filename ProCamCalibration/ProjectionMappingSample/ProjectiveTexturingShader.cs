@@ -2,7 +2,6 @@
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Device = SharpDX.Direct3D11.Device;
@@ -77,33 +76,24 @@ namespace RoomAliveToolkit
         [StructLayout(LayoutKind.Explicit, Size = Constants.size)]
         public unsafe struct Constants
         {
-            public const int size = 128 + 16;
+            public const int size = 128;
             [FieldOffset(0)]
             public fixed float userWorldViewProjection[16];
             [FieldOffset(64)]
             public fixed float projectorWorldViewProjection[16];
-            [FieldOffset(128)]
-            public float globalTime;
         };
 
-        public unsafe void SetConstants(DeviceContext deviceContext, 
-            SharpDX.Matrix userWorldViewProjection, 
-            SharpDX.Matrix projectorWorldViewProjection,
-            TimeSpan elapsedTime)
+        public unsafe void SetConstants(DeviceContext deviceContext, SharpDX.Matrix userWorldViewProjection, SharpDX.Matrix projectorWorldViewProjection)
         {
             Constants constants = new Constants();
 
             for (int i = 0, col = 0; col < 4; col++)
-            {
                 for (int row = 0; row < 4; row++)
                 {
                     constants.userWorldViewProjection[i] = userWorldViewProjection[row, col];
                     constants.projectorWorldViewProjection[i] = projectorWorldViewProjection[row, col];
                     i++;
                 }
-            }
-
-            constants.globalTime = (float)elapsedTime.TotalSeconds;
 
             DataStream dataStream;
             deviceContext.MapSubresource(constantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
@@ -111,7 +101,7 @@ namespace RoomAliveToolkit
             deviceContext.UnmapSubresource(constantBuffer, 0);
         }
 
-        public void Render(DeviceContext deviceContext, ShaderResourceView depthImageTextureRV, SharpDX.Direct3D11.Buffer vertexBuffer, RenderTargetView renderTargetView, DepthStencilView depthStencilView, Viewport viewport)
+        public void Render(DeviceContext deviceContext, ShaderResourceView depthImageTextureRV, ShaderResourceView colorImageTextureRV, SharpDX.Direct3D11.Buffer vertexBuffer, RenderTargetView renderTargetView, DepthStencilView depthStencilView, Viewport viewport)
         {
             deviceContext.InputAssembler.InputLayout = vertexInputLayout;
             deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
@@ -125,7 +115,8 @@ namespace RoomAliveToolkit
             deviceContext.VertexShader.SetConstantBuffer(0, constantBuffer);
             deviceContext.GeometryShader.Set(geometryShader);
             deviceContext.PixelShader.Set(pixelShader);
-            deviceContext.PixelShader.SetConstantBuffer(0, constantBuffer);
+            deviceContext.PixelShader.SetShaderResource(0, colorImageTextureRV);
+            deviceContext.PixelShader.SetSampler(0, colorSamplerState);
             deviceContext.Draw((Kinect2Calibration.depthImageWidth - 1) * (Kinect2Calibration.depthImageHeight - 1) * 6, 0);
 
             deviceContext.VertexShader.SetShaderResource(0, null); // to avoid warnings when these are later set as render targets

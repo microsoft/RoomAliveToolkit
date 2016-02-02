@@ -133,16 +133,7 @@ namespace RoomAliveToolkit
                     // switch to fullscreen
                     ShowInTaskbar = false;
                     FormBorderStyle = FormBorderStyle.None;
-
-                    // Clamp to last screen if screen number is not available
-                    if (projector.displayIndex >= Screen.AllScreens.Length)
-                    {
-                        Console.WriteLine("Projector '{0}' Clamped displayIndex '{1}' to '{2}'", projector.name, projector.displayIndex, Screen.AllScreens.Length - 1);
-
-                        projector.displayIndex = Screen.AllScreens.Length - 1;
-                    }
-
-                    var bounds = Screen.AllScreens[projector.displayIndex].Bounds;
+                    var bounds = Screen.AllScreens[projector.displayIndex].Bounds; // TODO: catch the case where the display is not available
                     StartPosition = FormStartPosition.Manual;
                     Location = new System.Drawing.Point(bounds.X, bounds.Y);
                     Size = new Size(bounds.Width, bounds.Height);

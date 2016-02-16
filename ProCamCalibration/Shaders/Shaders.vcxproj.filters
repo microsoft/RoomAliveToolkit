@@ -46,5 +46,11 @@
     <FxCompile Include="DepthAndProjectiveTextureVS.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
+    <FxCompile Include="frustumVS.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
+    <FxCompile Include="frustumPS.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

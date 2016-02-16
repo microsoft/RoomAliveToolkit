@@ -607,53 +607,47 @@ namespace RoomAliveToolkit
                             }
                         }
 
-                        if (renderCameraColorFrustums)
+                        foreach (var camera in ensemble.cameras)
                         {
-                            frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 1f, 0f));
-                            foreach (var camera in ensemble.cameras)
+                            if (cameraDeviceResources.ContainsKey(camera))
                             {
-                                if (camera.pose != null)
+                                if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
                                 {
-                                    SharpDX.Matrix cameraProjection = GetCameraColorProjectionMatrix(camera);
-                                    cameraProjection.Transpose();
-                                    cameraProjection.Invert();
-
                                     var world = new SharpDX.Matrix();
                                     for (int i = 0; i < 4; i++)
                                         for (int j = 0; j < 4; j++)
                                             world[i, j] = (float)camera.pose[i, j];
                                     world.Transpose();
 
-                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
-                                    frustumShader.Render(deviceContext);
+                                    // view and projection matrix are post-multiply
+                                    var worldViewProjection = world * viewProjection;
+
+                                    if (renderCameraColorFrustums)
+                                    {
+                                        frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 1f, 0f));
+
+                                        SharpDX.Matrix cameraProjection = GetCameraColorProjectionMatrix(camera);
+                                        cameraProjection.Transpose();
+                                        cameraProjection.Invert();
+
+                                        frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                        frustumShader.Render(deviceContext);
+                                    }
+
+                                    if (renderCameraDepthFrustums)
+                                    {
+                                        frustumShader.SetPixelShaderConstants(deviceContext, new Color3(0f, 1f, 1f));
+
+                                        SharpDX.Matrix cameraProjection = GetCameraDepthProjectionMatrix(camera);
+                                        cameraProjection.Transpose();
+                                        cameraProjection.Invert();
+
+                                        frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                        frustumShader.Render(deviceContext);
+                                    }
                                 }
                             }
                         }
-
-                        if (renderCameraDepthFrustums)
-                        {
-                            frustumShader.SetPixelShaderConstants(deviceContext, new Color3(0f, 1f, 1f));
-                            foreach (var camera in ensemble.cameras)
-                            {
-                                if (camera.pose != null)
-                                {
-                                    SharpDX.Matrix cameraProjection = GetCameraDepthProjectionMatrix(camera);
-                                    cameraProjection.Transpose();
-                                    cameraProjection.Invert();
-
-                                    var world = new SharpDX.Matrix();
-                                    for (int i = 0; i < 4; i++)
-                                        for (int j = 0; j < 4; j++)
-                                            world[i, j] = (float)camera.pose[i, j];
-                                    world.Transpose();
-
-                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
-                                    frustumShader.Render(deviceContext);
-                                }
-                            }
-                        }
-
-                        //GetCameraDepthProjectionMatrix
 
                         if (renderProjectorFrustums)
                         {

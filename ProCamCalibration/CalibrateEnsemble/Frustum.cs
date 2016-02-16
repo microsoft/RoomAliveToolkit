@@ -146,7 +146,7 @@ namespace RoomAliveToolkit
             [FieldOffset(64)]
             public fixed float viewProjection[16]; 
             [FieldOffset(128)]
-            public fixed float frustumProjection[16];
+            public fixed float inverseProjection[16];
         };
 
 
@@ -159,7 +159,7 @@ namespace RoomAliveToolkit
             public fixed float color[3];
         };
 
-        public unsafe void SetVertexShaderConstants(DeviceContext deviceContext, SharpDX.Matrix world, SharpDX.Matrix viewProjection, SharpDX.Matrix frustumProjection)
+        public unsafe void SetVertexShaderConstants(DeviceContext deviceContext, SharpDX.Matrix world, SharpDX.Matrix viewProjection, SharpDX.Matrix inverseProjection)
         {
             // hlsl matrices are default column order
             var constants = new VSConstantBuffer();
@@ -169,7 +169,7 @@ namespace RoomAliveToolkit
                 {
                     constants.world[i] = world[row, col];
                     constants.viewProjection[i] = viewProjection[row, col];
-                    constants.frustumProjection[i] = frustumProjection[row, col];
+                    constants.inverseProjection[i] = inverseProjection[row, col];
                     i++;
                 }
             }

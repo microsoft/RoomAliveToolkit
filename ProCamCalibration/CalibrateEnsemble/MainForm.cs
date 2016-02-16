@@ -607,39 +607,74 @@ namespace RoomAliveToolkit
                             }
                         }
 
-                        if (renderCameraFrustums)
+                        if (renderCameraColorFrustums)
                         {
                             frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 1f, 0f));
                             foreach (var camera in ensemble.cameras)
                             {
-                                SharpDX.Matrix cameraProjection = GetCameraProjectionMatrix(camera);
+                                if (camera.pose != null)
+                                {
+                                    SharpDX.Matrix cameraProjection = GetCameraColorProjectionMatrix(camera);
+                                    cameraProjection.Transpose();
+                                    cameraProjection.Invert();
 
-                                var world = new SharpDX.Matrix();
-                                for (int i = 0; i < 4; i++)
-                                    for (int j = 0; j < 4; j++)
-                                        world[i, j] = (float)camera.pose[i, j];
-                                world.Transpose();
+                                    var world = new SharpDX.Matrix();
+                                    for (int i = 0; i < 4; i++)
+                                        for (int j = 0; j < 4; j++)
+                                            world[i, j] = (float)camera.pose[i, j];
+                                    world.Transpose();
 
-                                frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
-                                frustumShader.Render(deviceContext);
+                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                    frustumShader.Render(deviceContext);
+                                }
                             }
                         }
+
+                        if (renderCameraDepthFrustums)
+                        {
+                            frustumShader.SetPixelShaderConstants(deviceContext, new Color3(0f, 1f, 1f));
+                            foreach (var camera in ensemble.cameras)
+                            {
+                                if (camera.pose != null)
+                                {
+                                    SharpDX.Matrix cameraProjection = GetCameraDepthProjectionMatrix(camera);
+                                    cameraProjection.Transpose();
+                                    cameraProjection.Invert();
+
+                                    var world = new SharpDX.Matrix();
+                                    for (int i = 0; i < 4; i++)
+                                        for (int j = 0; j < 4; j++)
+                                            world[i, j] = (float)camera.pose[i, j];
+                                    world.Transpose();
+
+                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                    frustumShader.Render(deviceContext);
+                                }
+                            }
+                        }
+
+                        //GetCameraDepthProjectionMatrix
 
                         if (renderProjectorFrustums)
                         {
                             frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 0f, 1f));
                             foreach (var projector in ensemble.projectors)
                             {
-                                SharpDX.Matrix projectorProjection = GetProjectorProjectionMatrix(projector);
+                                if (projector.pose != null)
+                                {
+                                    SharpDX.Matrix projectorProjection = GetProjectorProjectionMatrix(projector);
+                                    projectorProjection.Transpose();
+                                    projectorProjection.Invert();
 
-                                var world = new SharpDX.Matrix();
-                                for (int i = 0; i < 4; i++)
-                                    for (int j = 0; j < 4; j++)
-                                        world[i, j] = (float)projector.pose[i, j];
-                                world.Transpose();
+                                    var world = new SharpDX.Matrix();
+                                    for (int i = 0; i < 4; i++)
+                                        for (int j = 0; j < 4; j++)
+                                            world[i, j] = (float)projector.pose[i, j];
+                                    world.Transpose();
 
-                                frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, projectorProjection);
-                                frustumShader.Render(deviceContext);
+                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, projectorProjection);
+                                    frustumShader.Render(deviceContext);
+                                }
                             }
                         }
                     }
@@ -999,18 +1034,25 @@ namespace RoomAliveToolkit
             UpdateRasterizerState();
         }
 
-        bool renderCameraFrustums = false;
-        private void cameraFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        bool renderCameraColorFrustums = false;
+        private void cameraColorFrustumToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            renderCameraFrustums = !renderCameraFrustums;
-            cameraFrustumsToolStripMenuItem.Checked = renderCameraFrustums;
+            renderCameraColorFrustums = !renderCameraColorFrustums;
+            cameraColorFrustumsToolStripMenuItem.Checked = renderCameraColorFrustums;
+        }
+
+        bool renderCameraDepthFrustums = false;
+        private void cameraDepthFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderCameraDepthFrustums = !renderCameraDepthFrustums;
+            cameraDepthFrustumsToolStripMenuItem.Checked = renderCameraDepthFrustums;
         }
 
         bool renderProjectorFrustums = false;
         private void projectorFrustumToolStripMenuItem_Click(object sender, EventArgs e)
         {
             renderProjectorFrustums = !renderProjectorFrustums;
-            projectorFrustumsToolStripMenuItem.Checked = renderCameraFrustums;
+            projectorFrustumsToolStripMenuItem.Checked = renderProjectorFrustums;
         }
 
         private void videoPanel1_SizeChanged(object sender, EventArgs e)
@@ -1331,9 +1373,9 @@ namespace RoomAliveToolkit
             return SharpDX.Matrix.Identity;
         }
 
-        SharpDX.Matrix GetCameraProjectionMatrix(ProjectorCameraEnsemble.Camera camera)
+        SharpDX.Matrix GetCameraColorProjectionMatrix(ProjectorCameraEnsemble.Camera camera)
         {
-            if ((camera.pose == null) || (camera.calibration.colorCameraMatrix == null))
+            if ((camera.pose == null) || (camera.calibration == null))
                 Console.WriteLine("Camera pose not set.");
             else
             {
@@ -1355,6 +1397,37 @@ namespace RoomAliveToolkit
 
                 float w = Kinect2Calibration.colorImageWidth;
                 float h = Kinect2Calibration.colorImageHeight;
+
+                return GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+            }
+
+            return SharpDX.Matrix.Identity;
+        }
+
+        SharpDX.Matrix GetCameraDepthProjectionMatrix(ProjectorCameraEnsemble.Camera camera)
+        {
+            if ((camera.pose == null) || (camera.calibration == null))
+                Console.WriteLine("Camera pose not set.");
+            else
+            {
+                view = new SharpDX.Matrix();
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        view[i, j] = (float)camera.pose[i, j];
+                view.Invert();
+                view.Transpose();
+
+                var cameraMatrix = camera.calibration.depthCameraMatrix;
+                float fx = (float)cameraMatrix[0, 0];
+                float fy = (float)cameraMatrix[1, 1];
+                float cx = (float)cameraMatrix[0, 2];
+                float cy = (float)cameraMatrix[1, 2];
+
+                float near = 0.1f;
+                float far = 100.0f;
+
+                float w = Kinect2Calibration.depthImageWidth;
+                float h = Kinect2Calibration.depthImageHeight;
 
                 return GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
             }

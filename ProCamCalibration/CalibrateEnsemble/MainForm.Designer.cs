@@ -53,7 +53,8 @@
             this.liveViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.wireframeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cameraFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cameraColorFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cameraDepthFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.projectorFrustumsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.perspectiveAtOriginToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -243,7 +244,8 @@
             this.renderToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.liveViewToolStripMenuItem,
             this.wireframeToolStripMenuItem,
-            this.cameraFrustumsToolStripMenuItem,
+            this.cameraColorFrustumsToolStripMenuItem,
+            this.cameraDepthFrustumsToolStripMenuItem,
             this.projectorFrustumsToolStripMenuItem,
             this.toolStripSeparator2});
             this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
@@ -269,12 +271,19 @@
             this.wireframeToolStripMenuItem.Text = "Wireframe";
             this.wireframeToolStripMenuItem.Click += new System.EventHandler(this.wireframeViewToolStripMenuItem_Click);
             // 
-            // cameraFrustumsToolStripMenuItem
+            // cameraColorFrustumsToolStripMenuItem
             // 
-            this.cameraFrustumsToolStripMenuItem.Name = "cameraFrustumsToolStripMenuItem";
-            this.cameraFrustumsToolStripMenuItem.Size = new System.Drawing.Size(112, 20);
-            this.cameraFrustumsToolStripMenuItem.Text = "Camera Frustums";
-            this.cameraFrustumsToolStripMenuItem.Click += new System.EventHandler(this.cameraFrustumToolStripMenuItem_Click);
+            this.cameraColorFrustumsToolStripMenuItem.Name = "cameraColorFrustumsToolStripMenuItem";
+            this.cameraColorFrustumsToolStripMenuItem.Size = new System.Drawing.Size(112, 20);
+            this.cameraColorFrustumsToolStripMenuItem.Text = "Camera Color Frustums";
+            this.cameraColorFrustumsToolStripMenuItem.Click += new System.EventHandler(this.cameraColorFrustumToolStripMenuItem_Click);
+            // 
+            // cameraDepthFrustumsToolStripMenuItem
+            // 
+            this.cameraDepthFrustumsToolStripMenuItem.Name = "cameraDepthFrustumsToolStripMenuItem";
+            this.cameraDepthFrustumsToolStripMenuItem.Size = new System.Drawing.Size(112, 20);
+            this.cameraDepthFrustumsToolStripMenuItem.Text = "Camera Depth Frustums";
+            this.cameraDepthFrustumsToolStripMenuItem.Click += new System.EventHandler(this.cameraDepthFrustumToolStripMenuItem_Click);
             // 
             // projectorFrustumsToolStripMenuItem
             // 
@@ -430,7 +439,8 @@
         private System.Windows.Forms.ToolStripMenuItem calibrateProjectorGroupsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optimizePoseToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem wireframeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem cameraFrustumsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cameraColorFrustumsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cameraDepthFrustumsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem projectorFrustumsToolStripMenuItem;
     }
 }

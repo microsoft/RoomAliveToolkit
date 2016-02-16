@@ -19,6 +19,8 @@ namespace RoomAliveToolkit
 
     public class FrustumShader
     {
+        float maxZ = 0.99f;
+
         struct VertexPosition
         {
             public SharpDX.Vector4 position;
@@ -32,14 +34,33 @@ namespace RoomAliveToolkit
         public FrustumShader(Device device)
         {
             // create single vertex buffer
-            var stream = new DataStream(6 * VertexPosition.SizeInBytes, true, true);
-            stream.Write(new Vector4(0, 0, 0, 1));
-            stream.Write(new Vector4(0, 0, 2, 1));
-            stream.Write(new Vector4(0, -0.1f, 0, 1));
-            stream.Write(new Vector4(0, 0.1f, 0, 1));
-            stream.Write(new Vector4(-0.1f, 0, 0, 1));
-            stream.Write(new Vector4(0.1f, 0, 0, 1));
+            var stream = new DataStream(24 * VertexPosition.SizeInBytes, true, true);
+            stream.Write(new Vector4(-1, -1, 0, 1));
+            stream.Write(new Vector4( 1, -1, 0, 1));
+            stream.Write(new Vector4( 1, -1, 0, 1));
+            stream.Write(new Vector4( 1,  1, 0, 1));
+            stream.Write(new Vector4( 1,  1, 0, 1));
+            stream.Write(new Vector4(-1,  1, 0, 1));
+            stream.Write(new Vector4(-1,  1, 0, 1));
+            stream.Write(new Vector4(-1, -1, 0, 1));
 
+            stream.Write(new Vector4(-1, -1, maxZ, 1));
+            stream.Write(new Vector4( 1, -1, maxZ, 1));
+            stream.Write(new Vector4( 1, -1, maxZ, 1));
+            stream.Write(new Vector4( 1,  1, maxZ, 1));
+            stream.Write(new Vector4( 1,  1, maxZ, 1));
+            stream.Write(new Vector4(-1,  1, maxZ, 1));
+            stream.Write(new Vector4(-1,  1, maxZ, 1));
+            stream.Write(new Vector4(-1, -1, maxZ, 1));
+
+            stream.Write(new Vector4(-1, -1, 0, 1));
+            stream.Write(new Vector4(-1, -1, maxZ, 1));
+            stream.Write(new Vector4( 1, -1, 0, 1));
+            stream.Write(new Vector4( 1, -1, maxZ, 1));
+            stream.Write(new Vector4( 1,  1, 0, 1));
+            stream.Write(new Vector4( 1,  1, maxZ, 1));
+            stream.Write(new Vector4(-1,  1, 0, 1));
+            stream.Write(new Vector4(-1,  1, maxZ, 1));
             stream.Position = 0;
 
             var vertexBufferDesc = new BufferDescription()
@@ -47,7 +68,7 @@ namespace RoomAliveToolkit
                 BindFlags = BindFlags.VertexBuffer,
                 CpuAccessFlags = CpuAccessFlags.None,
                 Usage = ResourceUsage.Default,
-                SizeInBytes = 6 * VertexPosition.SizeInBytes,
+                SizeInBytes = 24 * VertexPosition.SizeInBytes,
             };
             vertexBuffer = new SharpDX.Direct3D11.Buffer(device, stream, vertexBufferDesc);
 
@@ -188,7 +209,7 @@ namespace RoomAliveToolkit
             deviceContext.PixelShader.SetConstantBuffer(0, pixelShaderConstantBuffer);
             deviceContext.PixelShader.Set(frustumPS);
 
-            deviceContext.Draw(6, 0);
+            deviceContext.Draw(24, 0);
         }
 
         VertexShader frustumVS;

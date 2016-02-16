@@ -601,7 +601,7 @@ namespace RoomAliveToolkit
                                     // view and projection matrix are post-multiply
                                     var worldViewProjection = world * viewProjection;
 
-                                    SetConstants(deviceContext, camera.calibration, viewProjection);
+                                    SetConstants(deviceContext, camera.calibration, worldViewProjection);
                                     cameraDeviceResources[camera].Render(deviceContext);
                                 }
                             }

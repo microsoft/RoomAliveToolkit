@@ -19,7 +19,7 @@ namespace RoomAliveToolkit
 
     public class FrustumShader
     {
-        float maxZ = 0.99f;
+        float maxZ = 0.97f;
 
         struct VertexPosition
         {

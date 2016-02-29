@@ -56,7 +56,7 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = 80,
+                SizeInBytes = 64,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -67,7 +67,7 @@ namespace RoomAliveToolkit
             {
                 Usage = ResourceUsage.Dynamic,
                 BindFlags = BindFlags.ConstantBuffer,
-                SizeInBytes = 1568,
+                SizeInBytes = 784,
                 CpuAccessFlags = CpuAccessFlags.Write,
                 StructureByteStride = 0,
                 OptionFlags = 0,
@@ -101,23 +101,47 @@ namespace RoomAliveToolkit
             vertexInputLayout.Dispose();
         }
 
-        public void SetVertexShaderConstants(DeviceContext deviceContext, SharpDX.Matrix projection)
+        public void SetVertexShaderConstants(DeviceContext deviceContext, ProjectorCameraEnsemble.Projector projector)
         {
             DataStream dataStream;
             deviceContext.MapSubresource(vertexShaderConstantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-            dataStream.PackedWrite(projection);
-            var lightPosition = new Vector3(0, 0, 0);
-            dataStream.PackedWrite(lightPosition);
+
+            var view = projector.pose.ToSharp4x4();
+            view.Invert();
+            view.Transpose();
+
+            var cameraMatrix = projector.cameraMatrix;
+            float fx = (float)cameraMatrix[0, 0];
+            float fy = (float)cameraMatrix[1, 1];
+            float cx = (float)cameraMatrix[0, 2];
+            float cy = (float)cameraMatrix[1, 2];
+
+            float near = 0.1f;
+            float far = 10.0f;
+
+            float w = projector.width;
+            float h = projector.height;
+
+            var projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+            projection.Transpose();
+
+            var viewProjection = view * projection;
+
+            dataStream.PackedWrite(viewProjection);
+
             deviceContext.UnmapSubresource(vertexShaderConstantBuffer, 0);
         }
 
-        public void SetPixelShaderConstants(DeviceContext deviceContext, List<ProjectorCameraEnsemble.Projector> projectors, List<ProjectorCameraEnsemble.Camera> cameras)
+        public void SetPixelShaderConstants(DeviceContext deviceContext, 
+            ProjectorCameraEnsemble.Projector thisProjector,
+            List<ProjectorCameraEnsemble.Projector> projectors)
         {
             DataStream dataStream;
             deviceContext.MapSubresource(pixelShaderConstantBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out dataStream);
 
             // numProjectors
             dataStream.PackedWrite((uint)projectors.Count);
+            dataStream.PackedWrite((uint)projectors.IndexOf(thisProjector));
 
             foreach (var projector in projectors)
             {
@@ -146,47 +170,16 @@ namespace RoomAliveToolkit
                 dataStream.NextVector();
 
                 // invertedFocalLength
-                dataStream.PackedWrite(1.0f / fx);
+                dataStream.PackedWrite(fx);
 
                 // viewProjection
                 dataStream.PackedWrite(viewProjection);
 
-                // projectorColor
-                var color = new Vector3(0, 0, 0);
-                dataStream.PackedWrite(color);
-            }
-
-            // skip past the empty entries in the fixed length array
-            dataStream.Seek(784, SeekOrigin.Begin);
-
-            dataStream.PackedWrite((uint)cameras.Count);
-
-            foreach (var camera in cameras)
-            {
-                var depthToWorld = camera.pose.ToSharp4x4();
-                var depthToColor = camera.calibration.depthToColorTransform.ToSharp4x4();
-                depthToWorld.Transpose();
-                depthToColor.Transpose();
-                var worldToDepth = depthToWorld;
-                worldToDepth.Invert();
-                var worldToColor = worldToDepth * depthToColor;
-
-                // every element of an array starts on a new 4-component vector
-                dataStream.NextVector();
-
-                // worldToColor
-                dataStream.PackedWrite(worldToColor);
-
-                // f
-                dataStream.PackedWrite(new Vector2((float)camera.calibration.colorCameraMatrix[0, 0] / (float)Kinect2Calibration.colorImageWidth,
-    -(float)camera.calibration.colorCameraMatrix[1, 1] / (float)Kinect2Calibration.colorImageHeight));
-                // c
-                dataStream.PackedWrite(new Vector2((float)camera.calibration.colorCameraMatrix[0, 2] / (float)Kinect2Calibration.colorImageWidth,
-                    1f - (float)camera.calibration.colorCameraMatrix[1, 2] / (float)Kinect2Calibration.colorImageHeight));
-                // k1
-                dataStream.PackedWrite((float)camera.calibration.colorLensDistortion[0]);
-                // k2
-                dataStream.PackedWrite((float)camera.calibration.colorLensDistortion[1]);
+                // position
+                var pose = projector.pose.ToSharp4x4();
+                pose.Transpose();
+                var position = pose.TranslationVector;
+                dataStream.PackedWrite(position);
             }
 
             deviceContext.UnmapSubresource(pixelShaderConstantBuffer, 0);
@@ -194,16 +187,21 @@ namespace RoomAliveToolkit
 
 
         public void Render(DeviceContext deviceContext,
-            List<ProjectorCameraEnsemble.Projector> projectors,
             List<ProjectorCameraEnsemble.Camera> cameras,
-            EnsembleDeviceResources ensembleDeviceResources,
+            List<ProjectorCameraEnsemble.Projector> projectors,
+            ProjectorCameraEnsemble.Projector projector,
+            ProjectorDeviceObjects projectorDeviceObjects,
             VertexBufferBinding vertexBufferBinding,
             SharpDX.Direct3D11.Buffer indexBuffer,
-            SharpDX.Matrix worldViewProjection,
-            ShaderResourceView depthMapsSRV,
-            ShaderResourceView colorDepthMapsSRV,
-            ShaderResourceView zBufferSRV)
+            ShaderResourceView depthMapsSRV)
         {
+
+            deviceContext.OutputMerger.SetTargets(projectorDeviceObjects.depthStencilView, projectorDeviceObjects.blendedProjectionRTV);
+            deviceContext.ClearRenderTargetView(projectorDeviceObjects.blendedProjectionRTV, Color4.Black);
+            deviceContext.ClearDepthStencilView(projectorDeviceObjects.depthStencilView, DepthStencilClearFlags.Depth, 1, 0);
+            deviceContext.Rasterizer.SetViewport(projectorDeviceObjects.viewport);
+
+
             deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
             deviceContext.InputAssembler.SetIndexBuffer(indexBuffer, Format.R32_UInt, 0);
 
@@ -217,15 +215,13 @@ namespace RoomAliveToolkit
             deviceContext.OutputMerger.DepthStencilState = depthStencilState;
             deviceContext.Rasterizer.State = rasterizerState;
 
-            SetVertexShaderConstants(deviceContext, worldViewProjection);
+            SetVertexShaderConstants(deviceContext, projector);
 
             // TODO: these do not need to be set every frame:
-            SetPixelShaderConstants(deviceContext, projectors, cameras);
+            SetPixelShaderConstants(deviceContext, projector, projectors);
 
             deviceContext.PixelShader.SetShaderResource(0, depthMapsSRV);
-            deviceContext.PixelShader.SetShaderResource(1, ensembleDeviceResources.colorImageTextureRV);
-            deviceContext.PixelShader.SetShaderResource(2, colorDepthMapsSRV);
-            deviceContext.PixelShader.SetShaderResource(3, zBufferSRV);
+            
 
 
             int numVertices = cameras.Count * Kinect2Calibration.depthImageWidth * Kinect2Calibration.depthImageHeight * 6;
@@ -234,10 +230,6 @@ namespace RoomAliveToolkit
             deviceContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding());
             deviceContext.InputAssembler.SetIndexBuffer(null, Format.R32_UInt, 0);
             deviceContext.PixelShader.SetShaderResource(0, null);
-            deviceContext.PixelShader.SetShaderResource(1, null);
-            deviceContext.PixelShader.SetShaderResource(2, null);
-            deviceContext.PixelShader.SetShaderResource(3, null);
-
 
         }
 

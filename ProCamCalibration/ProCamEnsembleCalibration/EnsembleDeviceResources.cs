@@ -3,7 +3,7 @@ using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.WIC;
 using System;
-using System.IO;
+using System.Collections.Generic;
 
 namespace RoomAliveToolkit
 {
@@ -80,6 +80,9 @@ namespace RoomAliveToolkit
                 //depthImage.Dispose();
             }
 
+            projectorDeviceObjects = new Dictionary<ProjectorCameraEnsemble.Projector, ProjectorDeviceObjects>();
+            foreach (var projector in ensemble.projectors)
+                projectorDeviceObjects.Add(projector, new ProjectorDeviceObjects(device, projector));
 
         }
 
@@ -89,6 +92,8 @@ namespace RoomAliveToolkit
         public Texture2D colorImageStagingTexture;
         ImagingFactory imagingFactory = new ImagingFactory();
         ShaderResourceView[] colorImageTextureRVs;
+        public Dictionary<ProjectorCameraEnsemble.Projector, ProjectorDeviceObjects> projectorDeviceObjects;
+
 
 
         public void UpdateColorImage(DeviceContext deviceContext, IntPtr colorImage, int arraySlice)

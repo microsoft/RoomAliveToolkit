@@ -57,8 +57,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	uint index11 = (DTid.y + 1) * depthImageWidth + DTid.x + 1;
 	float3 pos11 = asfloat(worldCoordinates.Load3(index11 * 24));
 
-	float3 upperNormal = normalize(cross(pos01 - pos00, pos10 - pos00));
-	float3 lowerNormal = normalize(cross(pos10 - pos11, pos01 - pos11));
+	float3 upperNormal = normalize(cross(pos10 - pos00, pos01 - pos00));
+	float3 lowerNormal = normalize(cross(pos01 - pos11, pos10 - pos11));
 
 	// store nornmals
 	quadInfo[index00].upperNormal = upperValid > 0 ? upperNormal : 0;

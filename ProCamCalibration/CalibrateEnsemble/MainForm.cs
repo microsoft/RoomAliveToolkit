@@ -76,7 +76,8 @@ namespace RoomAliveToolkit
 
             // shaders
             depthAndColorShader = new DepthAndColorCameraShader(device);
-            blendShader = new VizShader(device);
+            vizShader = new VizShader(device);
+            blendShader = new BlendShader(device);
 
             manipulator = new Manipulator(videoPanel1);
 
@@ -112,7 +113,8 @@ namespace RoomAliveToolkit
         DepthStencilView depthStencilView;
         Viewport viewport;
         DepthAndColorCameraShader depthAndColorShader;
-        VizShader blendShader;
+        VizShader vizShader;
+        BlendShader blendShader;
         DepthToWorldCoordinateShader depthToWorldCoordinateShader;
         DepthMapShader depthMapShader;
         ColorDepthMapShader colorDepthMapShader;
@@ -150,6 +152,13 @@ namespace RoomAliveToolkit
                         depthMapShader.Render(deviceContext, ensemble.projectors, ensemble.cameras.Count, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);
                         //colorDepthMapShader.Render(deviceContext, ensemble.cameras, depthToWorldCoordinateShader.vertexBufferBinding, depthToWorldCoordinateShader.indexBuffer);
 
+                        // blend
+                        foreach (var projector in ensemble.projectors)
+                            blendShader.Render(deviceContext, ensemble.cameras, ensemble.projectors, projector, ensembleDeviceResources.projectorDeviceObjects[projector],
+                                depthToWorldCoordinateShader.vertexBufferBinding,
+                                depthToWorldCoordinateShader.indexBuffer, depthMapShader.depthMapsSRV);
+
+
                         // prepare our render target
                         deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
                         deviceContext.ClearRenderTargetView(renderTargetView, Color4.Black);
@@ -168,7 +177,7 @@ namespace RoomAliveToolkit
                         //    }
                         //}
 
-                        blendShader.Render(deviceContext, ensemble.projectors, ensemble.cameras, ensembleDeviceResources, depthToWorldCoordinateShader.vertexBufferBinding,
+                        vizShader.Render(deviceContext, ensemble.projectors, ensemble.cameras, ensembleDeviceResources, depthToWorldCoordinateShader.vertexBufferBinding,
                             depthToWorldCoordinateShader.indexBuffer, worldViewProjection, depthMapShader.depthMapsSRV, colorDepthMapShader.depthMapsSRV, depthMapShader.depthStencilView2);
 
                         swapChain.Present(0, PresentFlags.None);

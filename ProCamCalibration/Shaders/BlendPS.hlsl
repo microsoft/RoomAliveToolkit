@@ -1,59 +1,39 @@
 Texture2DArray<float> depthMaps : register(t0);
-Texture2DArray<float4> colorTextures : register(t1);
-Texture2DArray<float> colorDepthMaps : register(t2);
-Texture2DArray<float> zBuffers : register(t3);
-
-SamplerState colorSampler : register(s0);
 
 struct PSInput
 {
 	float4 pos : SV_Position; // view space coords
 	float3 world : world; // world coords
 	float3 normal : NORMAL;
-	float3 lightDir : LIGHTDIR;
-};
-
-struct Camera
-{
-	matrix worldToColor;
-	float2 f;
-	float2 c;
-	float k1, k2;
 };
 
 struct Projector
 {
-	float invertedFocalLength;
+	float focalLength;
 	matrix viewProjection;
-	float4 projectorColor;
+	float3 position;
 };
 
 cbuffer constants : register(b0)
 {
 	uint numProjectors;
+	uint thisProjector;
 	Projector projectors[8];
-	uint numCameras;
-	Camera cameras[8];
-}
-
-float2 Project(Camera camera, float4 x)
-{
-	float2 xp = x.xy / x.z;
-	float rSq = dot(xp, xp);
-	float2 xpp = xp * (1 + camera.k1 * rSq + camera.k2 * rSq * rSq);
-	return camera.f*xpp + camera.c;
 }
 
 float4 main(PSInput input) : SV_Target0
 {
 	float4 world4 = float4(input.world, 1);
-	float4 tintColor = float4(1, 1, 1, 1);
-	float minPixelSize = 1E10;
+
+	float blend[8];
+	float sum;
 
 	for (uint i = 0; i < numProjectors; i++)
 	{
 		// transform world coordinate point to projector view space
 		float4 projector = mul(world4, projectors[i].viewProjection);
+
+		blend[i] = 0;
 
 		// do projector coords lie within its view?
 		float w = projector.w;
@@ -65,10 +45,7 @@ float4 main(PSInput input) : SV_Target0
 
 			// predict distance to projector by looking at depth map
 			float2 tex = float2((projector.x + 1.0) / 2.0, 1 - (projector.y + 1.0) / 2.0);
-			//float depth0 = depthMaps.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
-
-			float depth0 = zBuffers.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
-
+			float depth0 = depthMaps.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
 
 			// depth of our vertex
 			float depth1 = projector.z;
@@ -76,46 +53,52 @@ float4 main(PSInput input) : SV_Target0
 			// if very different than projector coord then projector can't "see" the point
 			if (abs(depth0 - depth1) < 0.01) // note this is in far/near normalized distance, not m
 			{
-				// take projector with highest dpi at this distance; size of a pixel is z/f
-				float pixelSize = depth1 * projectors[i].invertedFocalLength;
-				if (pixelSize < minPixelSize)
-				{
-					minPixelSize = pixelSize;
-					tintColor = projectors[i].projectorColor;
-				}
+				// normal calculation
+				float3 normal = normalize(input.normal);
+				float3 projectorDirection = normalize(projectors[i].position - input.world);
+				blend[i] = pow(saturate(dot(normal, projectorDirection)), 5);
+
+				//// size of a pixel is z/f
+				//float pixelSize = projectors[i].focalLength / depth1 / 10000000;
+				//blend[i] = pow(pixelSize, 19.0);
+
+				//float distance = sqrt(projector.x*projector.x + projector.y*projector.y);
+				//blend[i] = pow(1.0 / distance, 20);
+
+				float distancex = (projector.x > 0) ? (1 - projector.x) : (projector.x + 1);
+				float distancey = (projector.y > 0) ? (1 - projector.y) : (projector.y + 1);
+
+				blend[i] = pow(distancex*distancey, 5) + 0.01;
+
+
 			}
 		}
+
+		sum += blend[i];
 	}
 
-	float num = 0;
+	float myBlend = blend[thisProjector] / sum;
+
+	//uint max = 0;
+	//uint maxi = 0;
+	//for (uint i = 0; i < numProjectors; i++)
+	//{
+	//	if (blend[i] > max)
+	//	{
+	//		max = blend[i];
+	//		maxi = i;
+	//	}
+	//	blend[i] /= sum;
+	//}
+
+	//float myBlend = 0.1*blend[thisProjector] + 0.9 * (thisProjector == maxi ? 1.0 : 0);
+
 	float4 color = 0;
-	for (int i = 0; i < numCameras; i++)
-	{
-		// color camera coords
-		float4 colorCamera = mul(world4, cameras[i].worldToColor);
+	
+	if (sum > 0)
+		color = myBlend * float4(1, 1, 1, 1);
+	else if (sum == 0)
+		color = float4(1, 0, 0, 0);
 
-		// color image coords [0,1],[0,1]
-		// this includes a flip in y to get to texture coordinates (y down): f_y' = -f_y, c_y' = 1 - c_y 
-		float2 tex = Project(cameras[i], colorCamera);
-
-		float depth0 = colorDepthMaps.Load(int4(tex.x * 1024, tex.y * 768, i, 0)); // depth map dimensions
-		float depth1 = (colorCamera.z - 0.8) / 8.0;
-
-		float4 thisColor = colorTextures.Sample(colorSampler, float3(tex, i));
-
-		//float4 thisColor = depth0 * float4(1, 1, 1, 1);
-		//thisColor.w = 1;
-
-		if (abs(depth0 - depth1) < 0.01)
-		if (colorCamera.z > 0.8) // necessary? (even for > 0 we get strange banding on the sides)
-		{
-			color += thisColor;
-			// sampler border color == 0; easier than checking tex coord bounds manually
-			num += thisColor.w;
-		}
-	}
-
-	color = num > 0 ? color / num : float4(1, 1, 1, 1) / 4;
-
-	return color * tintColor;
+	return color;
 }

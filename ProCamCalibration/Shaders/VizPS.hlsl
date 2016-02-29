@@ -5,6 +5,9 @@ Texture2DArray<float> zBuffers : register(t3);
 
 SamplerState colorSampler : register(s0);
 
+
+Texture2D<float> test[8] : register(t4);
+
 struct PSInput
 {
 	float4 pos : SV_Position; // view space coords
@@ -48,7 +51,13 @@ float4 main(PSInput input) : SV_Target0
 {
 	float3 lightDir = normalize(input.lightDir);
 	float3 normal = normalize(input.normal);
-	float3 color = float3(1, 1, 1)*saturate(dot(-lightDir, normal));
+	float3 color = float3(1, 1, 1)*saturate(dot(lightDir, normal));
+
+	//float sum = 0;
+	//for (int i = 0; i < numProjectors; i++)
+	//{
+	//	sum += test[i].Load(int3(0, 0, 0));
+	//}
 
 	return float4(color, 1);
 

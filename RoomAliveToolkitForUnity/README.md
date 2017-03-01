@@ -5,7 +5,7 @@ RoomAlive Toolkit for Unity contains is a set of Unity scripts and tools that en
 
 Here are a few of the most comon reasons why one might want to use this toolkit:
 
-* To easily get and render Kinect depth + RGB + audio + skeleton data in Unity. Our project includes Unity shaders that *mesh* depth images and texture map them so your CPU is ready for other tasks.
+* To easily get and render Kinect depth + RGB + audio + skeleton data in Unity. Our project includes Unity shaders that *mesh* depth docs/Images and texture map them so your CPU is ready for other tasks.
 * To perform projection mapping with multiple projectors and/or Kinect cameras. 
 * To perform user view-dependent projection mapping on both static and moving scenes. 
 
@@ -13,7 +13,7 @@ In the remainder of this document and in our Unity scripts we use the *“RAT”
 
 ## Components of This Toolkit:
 
-1. **KinectV2Server** (C#) – a standalone tool that handles obtaining images from Kinect device, and streaming them via TCP sockets to the Unity scenes. There is no dependency on Unity for this particular tool. 
+1. **KinectV2Server** (C#) – a standalone tool that handles obtaining docs/Images from Kinect device, and streaming them via TCP sockets to the Unity scenes. There is no dependency on Unity for this particular tool. 
 2. **RoomAlive Toolkit scripts and shaders for Unity** (C#) – these provide capabilities to receive Kinect data, create unity scenes based on pre-existing calibration data, as well as perform view-dependent projection mapping for tracked users. These scripts are organized in in two parts:
   - *Assets\RoomAliveToolkit* - These are the core required scripts and shaders of the toolkit. 
   - *Assets\RoomAliveToolkit_Examples* - These are *optional* scripts and scenes that contain the pre-assembled example scenes. This folder can be safely removed in new project if those examples are not required.  
@@ -28,9 +28,9 @@ In the remainder of this document and in our Unity scripts we use the *“RAT”
 *Please note:* The KinectV2Server project uses SharpDX and Math.NET Numerics packages. These will be downloaded and installed automatically via NuGet when RoomAlive Toolkit is built.
 Upon downloading the code, please build KinectV2Server project in Visual Studio. 
 
-## Package vs. Code
+## Unity Package
 
-A convenient way to import all this code into your Unity project is by importing our pre-compiled [Unity package](..\Packages\RoomAliveToolkit.unitypackage)
+A convenient way to import all this code into your Unity project is by importing our pre-compiled **[Unity package](RoomAliveUnity\Packages\RoomAliveToolkit.unitypackage)**
 
 ## Scene Examples
 
@@ -89,19 +89,19 @@ To setup your Unity scene, do the following steps:
 10.	In *RATSceneSetup*, press `Use Default 3D Models` button. You should see two 3D models (*kinect* and *projector*) appear linked right above to the `Kinect Model` and `Projector Model` respectively. 
 11.	In *RATSceneSetup*, make sure that the component says `Ready` on the bottom. If not, press `Reload Calibration Data` button again. 
 12.	If *RATSceneSetup* says `Ready`, press `Build RoomAlive Scene` button. 
-13. You should now have a complete scene created in *MyRoom* object. The scene will show you your Kinects and projectors, at the locations in your room as determiened by the calibration. Our script takes care of correctly connecting all behaviors in the scene. Your MyRoom object inspector should look something like this: ![MyRoom Scripts](Images/MyRoomScripts.png?raw=true)
+13. You should now have a complete scene created in *MyRoom* object. The scene will show you your Kinects and projectors, at the locations in your room as determiened by the calibration. Our script takes care of correctly connecting all behaviors in the scene. Your MyRoom object inspector should look something like this: ![MyRoom Scripts](docs/Images/MyRoomScripts.png?raw=true)
 14.	To add the 3D model of your room into the scene, simply drag the obj file under *MyRoom* object. 
 15.	(optional) You should add a directional light above so that you can see the object better. 
 16.	You can now inspect your scene hierarchy which should include at least one Kinect object and one projector. In the scene views, both the projector and the Kinect will be visible as a 3D models and they should be located at the exact location where they are physically in your room. 
 17.	If you are using our *TestRATScene1x1* calibration (officeTest.xml and officeTest.obj) your scene will look something like this: 
 
-![Test Scene in Unity](Images/TestScene1x1NoUser.png?raw=true) 
+![Test Scene in Unity](docs/Images/TestScene1x1NoUser.png?raw=true) 
 
 ## *KinectV2Server*: Streaming Kinect Data to Unity 
 
 Please build *KinectV2Server* project. Then start the executable `KinectV2Server.exe` on each machine connected to the Kinect camera. In contrast to running the simple `KinectServer.exe` in the Calibration Ensamble example, this server has a GUI that lets you controll a bunch of parameters regarding what data is streamed and how it is encoded. 
 
-![KinectV2Server](Images/KinectV2Server.png?raw=true)
+![KinectV2Server](docs/Images/KinectV2Server.png?raw=true)
 
 Make sure you are using JPEG color compression (from the drop down menu).  
 
@@ -155,7 +155,7 @@ Create 4 new layers in your scene (`Inspector->Layers->Add Layer…`), and name 
 3. **Virtual3DObjects** – for virtual 3D objects that will be perspective mapped from the perspective of the user
 4. **VirtualTextures** – for virtual objects that should be texture mapped onto existing surfaces (these objects will be rendered as flat user-independent layers, kind of like stickers on the physical geometry).
 
- ![Layers](Images/Layers.png?raw=true)
+ ![Layers](docs/Images/Layers.png?raw=true)
 
 Then set the objects in your scene to the appropriate layer:
 
@@ -177,7 +177,7 @@ The final step is to configure the culling masks of all different cameras in the
   * In second *RATProjectionPass* (second added script) set `Target Surface Layers = DynamicSurfaces` (make sure you uncheck `Default`). Then click on `Set Dynamic Defaults` button.
 5. The User configuration should now look like this:
  
-![User Configuration](Images/UserConfiguration.png?raw=true)
+![User Configuration](docs/Images/UserConfiguration.png?raw=true)
 
 ## *RATProjectionPass* Explained
 
@@ -200,13 +200,13 @@ Another reason is that in the projection mapping pass, the colors of the geometr
 
 ## Running the Scene
 
-Here is the final scene graph for the assembled project (*TestRATScene1x1*), including a test FloorPlan model (*Virtual3DObject* layer) and a World Map texture (*VirtualTextures* layer) on the wall. 
+Here is the final scene graph for the assembled project (*TestRATScene1x1*), including a test FloorPlan model (*Virtual3DObject* layer) and a example 2D texture (*VirtualTextures* layer) on the wall. 
 
-![Test Scene 1x1](Images/TestScene1x1.png?raw=true)
+![Test Scene 1x1](docs/Images/TestScene1x1.png?raw=true)
 
-Here is another example (*TestRATScene3x3*), this time with 3 projectors and 3 Kinect cameras. The scene includes the same 3D virtual objects a test FloorPlan model and a World Map texture on the wall. 
+Here is another example (*TestRATScene3x3*), this time with 3 projectors and 3 Kinect cameras. The scene includes the same 3D virtual objects a test FloorPlan model and a example 2D texture on the wall. 
 
-![Test Scene 3x3](Images/TestScene3x3.png?raw=true)
+![Test Scene 3x3](docs/Images/TestScene3x3.png?raw=true)
 
 If you run the project now, you should see some projection mapped object in your *Game* view. To see how to move the Game window to the target display and thus see the scene projected directly on top of your room, please check out section 7 on Game Window Management. 
 
@@ -231,7 +231,7 @@ First, make sure that the *RATProjectionManager* `Screen Setup` is set to *Edito
 
 To make this alignmnet pixel precise, RoomAlive Toolkit for Unity contains a utility called *RATMoveGameWindow* (select `Window->Move Game Window` from the menu). Please dock that tool window in your interface for best performance. 
 
-![RATMoveGameWindow](Images/RATMoveGameWindow.png?raw=true)
+![RATMoveGameWindow](docs/Images/RATMoveGameWindow.png?raw=true)
 
 In that tool, you can specify the location as well as size of the desired location of the Game window and then simply press `Move Game Window` button to dock it there. These coordinates can be saved (and loaded) for your convenience. 
 
@@ -246,7 +246,7 @@ There is no way (yet) to directly output the Game window over multiple displays,
 If the Game window spans multiple projectors, each projector needs to render only to a portion of that Game window. This is handled by setting the correct *screen viewports* in *RATProjectionManager* (note the values are 0-1). 
 
 Here are the 3 viewports setup for a scene consisting of 3 projectors arranged side by side:
-![Projection Viewports](Images/ProjectionViewports.png?raw=true)
+![Projection Viewports](docs/Images/ProjectionViewports.png?raw=true)
 
 ## Running as the Standalone Application
 
@@ -256,4 +256,12 @@ Assuming that the configuration of projector displays has not changed between th
 
 If the arrangement has changed, then you will need to manually edit the calibration XML file to se the desired display numbers according to your current projector display numbers. 
 
+
+# Recording and Playing Back Kinect Data
+
+It is possible to record all the Kinect data to a file and play it back rather than doing direct streaming. To do so, add *RATKinectPlaybackController* script to your Kinect game object in the scene. If you want to controll multiple Kinects simultaneously, add that script to the parent containing all Kinects. 
+
+By controlling the `Streaming Mode` variable, you can controll different asspects of playback (*Read*, *ReadPreloaded*, *Write*, and *None*). Here is here editor looks for *Read* mode:
+
+![Kinect Playback](docs/Images/KinectPlaybackRead.png?raw=true)
 

@@ -1,0 +1,444 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{87B755B5-FADA-46A1-817A-662EC3981CD3}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>KinectV2Server</RootNamespace>
+    <AssemblyName>KinectV2Server</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>KinectV2Server.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\KinectServerIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MathNet.Numerics, Version=3.17.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.3.17.0\lib\net40\MathNet.Numerics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Kinect, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Kinect.Face, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=AMD64" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="SharpDX, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.3.1.1\lib\net45\SharpDX.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct2D1, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Direct2D1.3.1.1\lib\net45\SharpDX.Direct2D1.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.DirectSound, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.DirectSound.3.1.1\lib\net45\SharpDX.DirectSound.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.DXGI, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.DXGI.3.1.1\lib\net45\SharpDX.DXGI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Mathematics.3.1.1\lib\net45\SharpDX.Mathematics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ObjFile.cs" />
+    <Compile Include="PreProcessDepthMap.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="KinectServerSettings.cs" />
+    <Compile Include="TCPNetworkStreamer.cs" />
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\ExpressionRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\ExpressionRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\EyeLeftRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\EyeLeftRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\EyeRightRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\EyeRightRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\FacialHairIRRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\FacialHairIRRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\FacialHairRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\FacialHairRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\Feature.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\Feature.config</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\GlassesIRRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\GlassesIRRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\GlassesRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\GlassesRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\LookingAwayRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\LookingAwayRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\MouthMovedRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\MouthMovedRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\MouthOpenRandomForest.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\MouthOpenRandomForest.model</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceAlignment.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceAlignment.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceAlignmentColor.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceAlignmentColor.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceAlignmentColor27.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceAlignmentColor27.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceDetector.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceDetector.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceOrientation.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceOrientation.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\FaceTrackingColor27.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\FaceTrackingColor27.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\3DModel.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\3DModel.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\3DModel_globalPCA.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\3DModel_globalPCA.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_F.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_F.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_HLP.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_HLP.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_HRP.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\AAMModelData_HRP.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\PCAMaskBias.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\PCAMaskBias.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\front.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\front.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\front_nose.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\front_nose.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\left.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\left.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\left_nose.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\left_nose.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\right.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\right.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\right_nose.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\right_nose.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\EyeClose.pra">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\EyeClose.pra</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\EyeClose.wgh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\EyeClose.wgh</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\LeftCloseRightOpen44Flip.pra">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\LeftCloseRightOpen44Flip.pra</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\LeftCloseRightOpen44Flip.wgh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\LeftCloseRightOpen44Flip.wgh</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\LeftOpenRightClose44Flip.pra">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\LeftOpenRightClose44Flip.pra</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EyeState\LeftOpenRightClose44Flip.wgh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EyeState\LeftOpenRightClose44Flip.wgh</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\MouthModel\close.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\MouthModel\close.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\MouthModel\lopen.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\MouthModel\lopen.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\front.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\front.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\left.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\left.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\right.mod.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\rigth.mod.bin</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\WholeHeadModel\fullMeanHead60_tri.ply">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\WholeHeadModel\fullMeanHead60_tri.ply</Link>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ConsoleTextBox\ConsoleTextBox.csproj">
+      <Project>{8568397f-55b7-450e-9348-802853e489b9}</Project>
+      <Name>ConsoleTextBox</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ProCamEnsembleCalibrationLib\ProCamEnsembleCalibrationLib.csproj">
+      <Project>{d8a7fb2f-f8fd-4489-aa7b-82b57b12d6f1}</Project>
+      <Name>ProCamEnsembleCalibrationLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\Expression\NuiExpressionModelManifest.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\Expression\NuiExpressionModelManifest.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_F.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_F.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_HLP.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_HLP.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_HRP.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\AAMModel\Map2D3D_HRP.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\Front.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\Front.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\left.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\left.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\EvalModel\right.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\EvalModel\right.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\MouthModel\close.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\MouthModel\close.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\MouthModel\lopen.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\MouthModel\lopen.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\MouthModel\MeanShapes.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\MouthModel\MeanShapes.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\SkintoneModel\skintone_appearance_classifier.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\SkintoneModel\skintone_appearance_classifier.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\SkintoneModel\skintone_shape_classifier.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\SkintoneModel\skintone_shape_classifier.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\front.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\front.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\left.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\left.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\ViewModel\right.p.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <Link>NuiDatabase\HDFaceTracker\ViewModel\right.p.txt</Link>
+    </None>
+    <None Include="$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase\HDFaceTracker\WholeHeadModel\FullHeadMaskVertexCorrespondence.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>NuiDatabase\HDFaceTracker\WholeHeadModel\FullHeadMaskVertexCorrespondence.txt</Link>
+    </None>
+    <Content Include="Resources\KinectServerIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,183 @@
+fileFormatVersion: 2
+guid: 593027d5191bb3c42ac5b066ffe3ce60
+timeCreated: 1485891469
+licenseType: Pro
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: cameracenter
+    100002: cameracenter_MeshPart0
+    100004: cameracenter_MeshPart1
+    100006: cameracenter_MeshPart2
+    100008: cameracenter_MeshPart3
+    100010: cameracenter_MeshPart4
+    100012: cameracenter_MeshPart5
+    100014: cameracenter_MeshPart6
+    100016: cameraleft
+    100018: cameraleft_MeshPart0
+    100020: cameraleft_MeshPart1
+    100022: cameraleft_MeshPart2
+    100024: cameraleft_MeshPart3
+    100026: cameraleft_MeshPart4
+    100028: cameraleft_MeshPart5
+    100030: cameraleft_MeshPart6
+    100032: cameraright
+    100034: cameraright_MeshPart0
+    100036: cameraright_MeshPart1
+    100038: cameraright_MeshPart2
+    100040: cameraright_MeshPart3
+    100042: cameraright_MeshPart4
+    100044: cameraright_MeshPart5
+    100046: //RootNode
+    400000: cameracenter
+    400002: cameracenter_MeshPart0
+    400004: cameracenter_MeshPart1
+    400006: cameracenter_MeshPart2
+    400008: cameracenter_MeshPart3
+    400010: cameracenter_MeshPart4
+    400012: cameracenter_MeshPart5
+    400014: cameracenter_MeshPart6
+    400016: cameraleft
+    400018: cameraleft_MeshPart0
+    400020: cameraleft_MeshPart1
+    400022: cameraleft_MeshPart2
+    400024: cameraleft_MeshPart3
+    400026: cameraleft_MeshPart4
+    400028: cameraleft_MeshPart5
+    400030: cameraleft_MeshPart6
+    400032: cameraright
+    400034: cameraright_MeshPart0
+    400036: cameraright_MeshPart1
+    400038: cameraright_MeshPart2
+    400040: cameraright_MeshPart3
+    400042: cameraright_MeshPart4
+    400044: cameraright_MeshPart5
+    400046: //RootNode
+    2300000: cameracenter_MeshPart0
+    2300002: cameracenter_MeshPart1
+    2300004: cameracenter_MeshPart2
+    2300006: cameracenter_MeshPart3
+    2300008: cameracenter_MeshPart4
+    2300010: cameracenter_MeshPart5
+    2300012: cameracenter_MeshPart6
+    2300014: cameraleft_MeshPart0
+    2300016: cameraleft_MeshPart1
+    2300018: cameraleft_MeshPart2
+    2300020: cameraleft_MeshPart3
+    2300022: cameraleft_MeshPart4
+    2300024: cameraleft_MeshPart5
+    2300026: cameraleft_MeshPart6
+    2300028: cameraright_MeshPart0
+    2300030: cameraright_MeshPart1
+    2300032: cameraright_MeshPart2
+    2300034: cameraright_MeshPart3
+    2300036: cameraright_MeshPart4
+    2300038: cameraright_MeshPart5
+    3300000: cameracenter_MeshPart0
+    3300002: cameracenter_MeshPart1
+    3300004: cameracenter_MeshPart2
+    3300006: cameracenter_MeshPart3
+    3300008: cameracenter_MeshPart4
+    3300010: cameracenter_MeshPart5
+    3300012: cameracenter_MeshPart6
+    3300014: cameraleft_MeshPart0
+    3300016: cameraleft_MeshPart1
+    3300018: cameraleft_MeshPart2
+    3300020: cameraleft_MeshPart3
+    3300022: cameraleft_MeshPart4
+    3300024: cameraleft_MeshPart5
+    3300026: cameraleft_MeshPart6
+    3300028: cameraright_MeshPart0
+    3300030: cameraright_MeshPart1
+    3300032: cameraright_MeshPart2
+    3300034: cameraright_MeshPart3
+    3300036: cameraright_MeshPart4
+    3300038: cameraright_MeshPart5
+    4300000: cameracenter_MeshPart0
+    4300002: cameracenter_MeshPart1
+    4300004: cameracenter_MeshPart2
+    4300006: cameracenter_MeshPart3
+    4300008: cameracenter_MeshPart4
+    4300010: cameracenter_MeshPart5
+    4300012: cameracenter_MeshPart6
+    4300014: cameraleft_MeshPart0
+    4300016: cameraleft_MeshPart1
+    4300018: cameraleft_MeshPart2
+    4300020: cameraleft_MeshPart3
+    4300022: cameraleft_MeshPart4
+    4300024: cameraleft_MeshPart5
+    4300026: cameraleft_MeshPart6
+    4300028: cameraright_MeshPart0
+    4300030: cameraright_MeshPart1
+    4300032: cameraright_MeshPart2
+    4300034: cameraright_MeshPart3
+    4300036: cameraright_MeshPart4
+    4300038: cameraright_MeshPart5
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

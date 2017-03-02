@@ -8,4 +8,5 @@ The toolkit consists of two separate projects:
 * **[RoomAlive Toolkit for Unity](RoomAliveToolkitForUnity/)** - RoomAlive Toolkit for Unity contains is a set of Unity scripts and tools that enable immersive, dynamic projection mapping experiences, based on the projection-camera calibration from ProCamCalibration. This project also includes a tool to stream and render Kinect depth data to Unity. 
 
 Here is an example scene from our *RoomAlive* project to illustrate what is possible (this one uses 6 projectors and 6 Kinect cameras):
+
 ![RoomAlive Scene](RoomAliveToolkitforUnity/docs/Images/RoomAlive.png?raw=true) 

@@ -9,4 +9,4 @@ The toolkit consists of two separate projects:
 
 Here is an example scene from our *RoomAlive* project to illustrate what is possible (this one uses 6 projectors and 6 Kinect cameras):
 
-![RoomAlive Scene](RoomAliveToolkitforUnity/docs/images/Roomalive.png?raw=true) 
+![RoomAlive Scene](RoomAliveToolkitForUnity/docs/images/Roomalive.png?raw=true) 

@@ -28,7 +28,7 @@ Upon downloading the code, please build KinectV2Server project in Visual Studio.
 
 ## Unity Package
 
-RoomAlive Toolkit scripts can be easily imported into your Unity project using the pre-compiled **[Unity package](RoomAliveUnity\Packages\RoomAliveToolkit.unitypackage)**. Alternatively, manually copy the contents of the Assets directory into your Unity project Assets directory.
+RoomAlive Toolkit scripts can be easily imported into your Unity project using the pre-compiled **[Unity package](RoomAliveUnity/Packages)**. Alternatively, manually copy the contents of the Assets directory into your Unity project Assets directory.
 
 ## Scene Examples
 
@@ -53,11 +53,11 @@ A correctly configured scene includes many connections and dependencies among th
 
 ## Room Calibration
 
-The first step is to calibrate your set of projectors and cameras using the [CalibrateEnsamble](https://github.com/Kinect/RoomAliveToolkit/tree/master/ProCamCalibration/CalibrateEnsamble) tool from RoomAliveToolkit. 
+The first step is to calibrate your set of projectors and cameras using the [CalibrateEnsamble](../ProCamCalibration/CalibrateEnsemble) tool from RoomAliveToolkit. 
 
-Please follow the instructions [here](https://github.com/Kinect/RoomAliveToolkit#tutorial-calibrating-one-camera-and-one-projector) from RoomAlive Toolkit on how to calibrate your room setup.  
+Please follow the instructions [here](../ProCamCalibration#tutorial-calibrating-one-camera-and-one-projector) from RoomAlive Toolkit on how to calibrate your room setup.  
 
-If you have multiple cameras and/or multiple projectors, see the detailed instructions [here](https://github.com/Kinect/RoomAliveToolkit#calibrating-mutiple-cameras-and-multiple-projectors).
+If you have multiple cameras and/or multiple projectors, see the detailed instructions [here](../ProCamCalibration#calibrating-mutiple-cameras-and-multiple-projectors).
 
 It is important to place your cameras and projectors in the room to ensure that there is substantial overlap between projectors and cameras. Both the color camera and the depth cameras in each Kinect device must observe a good portion of the projected surface in order for calibration to succeed.
 

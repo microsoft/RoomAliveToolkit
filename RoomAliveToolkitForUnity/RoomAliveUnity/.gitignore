@@ -1,0 +1,7 @@
+## UNITY Directories to ignore
+
+/[Ll]ibrary/
+/[Tt]emp/
+.vs/
+
+Assets/MoveGameWindow.*

@@ -1,4 +1,6 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
 Shader "RoomAlive/ProjectionMappingDepthMeshMinimal"
 {
@@ -77,7 +79,7 @@ Shader "RoomAlive/ProjectionMappingDepthMeshMinimal"
 				}
 
 				float4 worldPt = float4(pos.x, pos.y, pos.z, 1);
-				o.pos = mul(UNITY_MATRIX_MVP, worldPt);
+				o.pos = UnityObjectToClipPos(worldPt);
 
 				// ***************************
 				// User viewpoint texture pos

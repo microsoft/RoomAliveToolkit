@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2015
+# Visual Studio 2017
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoomAliveUnity", "RoomAliveUnity.csproj", "{F0013BC6-14D2-782C-103E-098681D811FD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoomAliveUnity.Editor", "RoomAliveUnity.Editor.csproj", "{366A95A5-03BF-FB6A-8486-FCD1ABE8D7DD}"

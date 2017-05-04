@@ -256,3 +256,10 @@ By controlling the `Streaming Mode` variable, you can control different aspects 
 
 ![Kinect Playback](docs/images/KinectPlaybackRead.png?raw=true)
 
+# FAQ
+
+## Why is there a hidden camera in RATProjectionManager? Or why is there a single black pixel on the bottom left corner of my game window?
+
+"RATProjectionManager" calls specific rendering calls on various projectors in the scene once the User views are rendered into an off screen texture. To do so, it needs to be a Camera in Unity so that its "OnPostRender()" function get called on the render thread. This also requires that all projectors are inactive Cameras so that their rendering can be triggered manually. 
+
+However, we really don't want this "RATProjectionManager" camera to render anything. In Unity 5.5 or earlier, this could easily be accomplished by setting the depth of this fake camera to be -100 (i.e., the bottom of the stack of the camearas). However, in Unity 5.6 the depth ordering of camera rendering is messed up if the camera is disabled and its render function is called manually, so the fix (for the meantime) is that this fake camera renders into a black pixel at the very bottom left of the Game window (baiscally we set its viewport width and height to 0.001).

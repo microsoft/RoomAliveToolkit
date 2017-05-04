@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader "RoomAlive/ProjectionMappingMinimal" {
 
 	Properties {
@@ -39,7 +41,7 @@ Shader "RoomAlive/ProjectionMappingMinimal" {
 
 				o.worldPos = mul(unity_ObjectToWorld, objPt);
 				o.customColor = inputV.color;
-				o.pos = mul(UNITY_MATRIX_MVP, objPt);
+				o.pos = UnityObjectToClipPos(objPt);
 			}	
 
 			half4 frag(v2f IN) : COLOR

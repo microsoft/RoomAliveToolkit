@@ -194,9 +194,8 @@ namespace RoomAliveToolkit
                 maskWasEnabled = dynamicMask.enabled;
                 dynamicMask.enabled = false;
             }
-                
 
-
+            cam.depth = 1;
             cam.backgroundColor = projectionManager.backgroundColor;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.cullingMask = projectionManager.textureLayers;

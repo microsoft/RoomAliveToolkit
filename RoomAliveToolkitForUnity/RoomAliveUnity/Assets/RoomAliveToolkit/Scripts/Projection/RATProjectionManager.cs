@@ -75,11 +75,21 @@ namespace RoomAliveToolkit {
 
         void Start () {
 
-            if (gameObject.GetComponent<Camera>() == null)
-            {
-                //projection manager needs a hidden camera so that its OnPostRender() function get called. 
-                gameObject.AddComponent<Camera>().hideFlags = HideFlags.HideInInspector; //no need to see this camera or ever use it
-            }
+            if (gameObject.GetComponent<Camera>() == null) gameObject.AddComponent<Camera>();
+
+            //projection manager needs a camera so that its OnPostRender() function get called on the render thread. 
+            var cam = gameObject.GetComponent<Camera>();
+
+            //Fix for the bug in overlay rendering depth ordering in Unity 5.6:
+            //Pack this dummy camera to render to a single bottom left pixel (and render nothing on black solid background)
+            cam.clearFlags = CameraClearFlags.Nothing;//.SolidColor;
+            cam.backgroundColor = Color.black;
+            cam.cullingMask = 0; //render nothing
+            cam.rect = new Rect(0, 0, 0.001f, 0.001f);
+            cam.depth = -100; //doesn't seem to affect much in Unity 5.6 render order
+            cam.hideFlags = HideFlags.HideInInspector; //no need to see this camera or ever use it
+
+            //Also make sure that Gimos are turned off in the Game window!
 
             if(screenSetup == ConfigOptions.MultiDisplay)
             {
@@ -98,8 +108,7 @@ namespace RoomAliveToolkit {
                 if (screenSetup == ConfigOptions.Editor)
                 {
                     projection.GetComponent<Camera>().targetDisplay = 0;
-                    if(projection.displayIndex< screenViewports.Length)
-                        projection.GetComponent<Camera>().rect = screenViewports[cnt];
+                    projection.GetComponent<Camera>().rect = screenViewports[cnt];
                 }
                 if (screenSetup == ConfigOptions.MultiDisplay)
                 {

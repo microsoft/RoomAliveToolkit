@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace RoomAliveToolkit
 {
@@ -36,8 +38,8 @@ namespace RoomAliveToolkit
 
         public void LoadDefault3DModels()
         {
-            kinectModel = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/RoomAliveToolkit/Models/Kinect.obj");
-            projectorModel = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/RoomAliveToolkit/Models/Projector.obj");
+            kinectModel = Instantiate(Resources.Load("Assets/RoomAliveToolkit/Models/Kinect.obj", typeof(GameObject))) as GameObject;
+            projectorModel = Instantiate(Resources.Load("Assets/RoomAliveToolkit/Models/Projector.obj", typeof(GameObject))) as GameObject;
         }
 
         public void BuildSceneComponents()

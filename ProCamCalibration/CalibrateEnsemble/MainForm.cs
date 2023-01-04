@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.ServiceModel;
 using System.ServiceModel.Discovery;
 using System.Windows.Forms;
 
@@ -28,6 +29,7 @@ namespace RoomAliveToolkit
             this.args = args;
         }
 
+        FrustumShader frustumShader;
         ProjectorCameraEnsemble ensemble;
         string path, directory;
         string[] args;
@@ -77,6 +79,9 @@ namespace RoomAliveToolkit
             // viewport
             viewport = new Viewport(0, 0, videoPanel1.Width, videoPanel1.Height, 0f, 1f);
 
+            
+            frustumShader = new FrustumShader(device);
+
             // shaders
             var shaderByteCode = new ShaderBytecode(File.ReadAllBytes("Content/DepthAndColorVS.cso"));
             depthAndColorVS2 = new VertexShader(device, shaderByteCode);
@@ -93,16 +98,7 @@ namespace RoomAliveToolkit
             };
             depthStencilState = new DepthStencilState(device, depthStencilStateDesc);
 
-            // rasterizer states
-            var rasterizerStateDesc = new RasterizerStateDescription()
-            {
-                CullMode = CullMode.None, // beware what this does to both shaders
-                FillMode = FillMode.Solid,
-                IsDepthClipEnabled = true,
-                IsFrontCounterClockwise = true,
-                IsMultisampleEnabled = true,
-            };
-            rasterizerState = new RasterizerState(device, rasterizerStateDesc);
+            UpdateRasterizerState();
 
             // color sampler state
             var colorSamplerStateDesc = new SamplerStateDescription()
@@ -158,6 +154,23 @@ namespace RoomAliveToolkit
             splitContainer1.SplitterDistance = Properties.Settings.Default.SplitterDistance;
 
             new System.Threading.Thread(RenderLoop).Start();
+        }
+
+        private void UpdateRasterizerState()
+        {
+            lock (renderLock)
+            {
+                // rasterizer states
+                var rasterizerStateDesc = new RasterizerStateDescription()
+                {
+                    CullMode = CullMode.None, // beware what this does to both shaders
+                    FillMode = wireframe ? FillMode.Wireframe : FillMode.Solid,
+                    IsDepthClipEnabled = true,
+                    IsFrontCounterClockwise = true,
+                    IsMultisampleEnabled = true,
+                };
+                rasterizerState = new RasterizerState(device, rasterizerStateDesc);
+            }
         }
 
         SharpDX.Direct3D11.Device device;
@@ -422,31 +435,39 @@ namespace RoomAliveToolkit
             {
                 while (live)
                 {
-                    var encodedColorData = camera.Client.LatestJPEGImage();
-
-                    // decode JPEG
-                    var memoryStream = new MemoryStream(encodedColorData);
-                    var stream = new WICStream(imagingFactory, memoryStream);
-                    // decodes to 24 bit BGR
-                    var decoder = new SharpDX.WIC.BitmapDecoder(imagingFactory, stream, SharpDX.WIC.DecodeOptions.CacheOnLoad);
-                    var bitmapFrameDecode = decoder.GetFrame(0);
-
-                    // convert to 32 bpp
-                    var formatConverter = new FormatConverter(imagingFactory);
-                    formatConverter.Initialize(bitmapFrameDecode, SharpDX.WIC.PixelFormat.Format32bppBGR);
-                    formatConverter.CopyPixels(nextColorData, Kinect2Calibration.colorImageWidth * 4); // TODO: consider copying directly to texture native memory
-                    //lock (colorData)
-                    //    Swap<byte[]>(ref colorData, ref nextColorData);
-                    lock (renderLock) // necessary?
+                    try
                     {
-                        UpdateColorImage(device.ImmediateContext, nextColorData);
+                        var encodedColorData = camera.Client.LatestJPEGImage();
+
+                        // decode JPEG
+                        var memoryStream = new MemoryStream(encodedColorData);
+                        var stream = new WICStream(imagingFactory, memoryStream);
+                        // decodes to 24 bit BGR
+                        var decoder = new SharpDX.WIC.BitmapDecoder(imagingFactory, stream, SharpDX.WIC.DecodeOptions.CacheOnLoad);
+                        var bitmapFrameDecode = decoder.GetFrame(0);
+
+                        // convert to 32 bpp
+                        var formatConverter = new FormatConverter(imagingFactory);
+                        formatConverter.Initialize(bitmapFrameDecode, SharpDX.WIC.PixelFormat.Format32bppBGR);
+                        formatConverter.CopyPixels(nextColorData, Kinect2Calibration.colorImageWidth * 4); // TODO: consider copying directly to texture native memory
+                                                                                                           //lock (colorData)
+                                                                                                           //    Swap<byte[]>(ref colorData, ref nextColorData);
+                        lock (renderLock) // necessary?
+                        {
+                            UpdateColorImage(device.ImmediateContext, nextColorData);
+                        }
+                        memoryStream.Close();
+                        memoryStream.Dispose();
+                        stream.Dispose();
+                        decoder.Dispose();
+                        formatConverter.Dispose();
+                        bitmapFrameDecode.Dispose();
                     }
-                    memoryStream.Close();
-                    memoryStream.Dispose();
-                    stream.Dispose();
-                    decoder.Dispose();
-                    formatConverter.Dispose();
-                    bitmapFrameDecode.Dispose();
+                    catch (EndpointNotFoundException)
+                    {
+                        Console.WriteLine("Could not find Kinect server for live color update.");
+                        live = false;
+                    }
                 }
             }
 
@@ -456,12 +477,21 @@ namespace RoomAliveToolkit
             {
                 while (live)
                 {
-                    nextDepthData = camera.Client.LatestDepthImage();
-                    //lock (remoteDepthData)
-                    //    Swap<byte[]>(ref remoteDepthData, ref nextRemoteDepthData);
-                    lock (renderLock)
+                    try
                     {
-                        UpdateDepthImage(device.ImmediateContext, nextDepthData);
+                        nextDepthData = camera.Client.LatestDepthImage();
+
+                        //lock (remoteDepthData)
+                        //    Swap<byte[]>(ref remoteDepthData, ref nextRemoteDepthData);
+                        lock (renderLock)
+                        {
+                            UpdateDepthImage(device.ImmediateContext, nextDepthData);
+                        }
+                    }
+                    catch (EndpointNotFoundException)
+                    {
+                        Console.WriteLine("Could not find Kinect server for live depth update.");
+                        live = false;
                     }
                 }
             }
@@ -502,12 +532,16 @@ namespace RoomAliveToolkit
             // hlsl matrices are default column order
             var constants = new ConstantBuffer();
             for (int i = 0, col = 0; col < 4; col++)
+            {
                 for (int row = 0; row < 4; row++)
                 {
                     constants.projection[i] = projection[row, col];
                     constants.depthToColorTransform[i] = (float)kinect2Calibration.depthToColorTransform[row, col];
                     i++;
                 }
+            }
+
+
             constants.f[0] = (float)kinect2Calibration.colorCameraMatrix[0, 0];
             constants.f[1] = (float)kinect2Calibration.colorCameraMatrix[1, 1];
             constants.c[0] = (float)kinect2Calibration.colorCameraMatrix[0, 2];
@@ -533,7 +567,6 @@ namespace RoomAliveToolkit
                     view = manipulator.Update();
 
                     var deviceContext = device.ImmediateContext;
-
                     deviceContext.InputAssembler.InputLayout = vertexInputLayout;
                     deviceContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
                     deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
@@ -550,9 +583,13 @@ namespace RoomAliveToolkit
 
                     // render all cameras
                     if (ensemble != null)
+                    {
+                        var viewProjection = view * projection;
+
                         foreach (var camera in ensemble.cameras)
                         {
                             if (cameraDeviceResources.ContainsKey(camera))
+                            {
                                 if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
                                 {
                                     var world = new SharpDX.Matrix();
@@ -562,12 +599,79 @@ namespace RoomAliveToolkit
                                     world.Transpose();
 
                                     // view and projection matrix are post-multiply
-                                    var worldViewProjection = world * view * projection;
+                                    var worldViewProjection = world * viewProjection;
 
                                     SetConstants(deviceContext, camera.calibration, worldViewProjection);
                                     cameraDeviceResources[camera].Render(deviceContext);
                                 }
+                            }
                         }
+
+                        foreach (var camera in ensemble.cameras)
+                        {
+                            if (cameraDeviceResources.ContainsKey(camera))
+                            {
+                                if (cameraDeviceResources[camera].renderEnabled && (camera.pose != null))
+                                {
+                                    var world = new SharpDX.Matrix();
+                                    for (int i = 0; i < 4; i++)
+                                        for (int j = 0; j < 4; j++)
+                                            world[i, j] = (float)camera.pose[i, j];
+                                    world.Transpose();
+
+                                    // view and projection matrix are post-multiply
+                                    var worldViewProjection = world * viewProjection;
+
+                                    if (renderCameraColorFrustums)
+                                    {
+                                        frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 1f, 0f));
+
+                                        SharpDX.Matrix cameraProjection = GetCameraColorProjectionMatrix(camera);
+                                        cameraProjection.Transpose();
+                                        cameraProjection.Invert();
+
+                                        frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                        frustumShader.Render(deviceContext);
+                                    }
+
+                                    if (renderCameraDepthFrustums)
+                                    {
+                                        frustumShader.SetPixelShaderConstants(deviceContext, new Color3(0f, 1f, 1f));
+
+                                        SharpDX.Matrix cameraProjection = GetCameraDepthProjectionMatrix(camera);
+                                        cameraProjection.Transpose();
+                                        cameraProjection.Invert();
+
+                                        frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, cameraProjection);
+                                        frustumShader.Render(deviceContext);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (renderProjectorFrustums)
+                        {
+                            frustumShader.SetPixelShaderConstants(deviceContext, new Color3(1f, 0f, 1f));
+                            foreach (var projector in ensemble.projectors)
+                            {
+                                if (projector.pose != null)
+                                {
+                                    SharpDX.Matrix projectorProjection = GetProjectorProjectionMatrix(projector);
+                                    projectorProjection.Transpose();
+                                    projectorProjection.Invert();
+
+                                    var world = new SharpDX.Matrix();
+                                    for (int i = 0; i < 4; i++)
+                                        for (int j = 0; j < 4; j++)
+                                            world[i, j] = (float)projector.pose[i, j];
+                                    world.Transpose();
+
+                                    frustumShader.SetVertexShaderConstants(deviceContext, world, viewProjection, projectorProjection);
+                                    frustumShader.Render(deviceContext);
+                                }
+                            }
+                        }
+                    }
 
                     swapChain.Present(1, PresentFlags.None);
                 }
@@ -648,7 +752,13 @@ namespace RoomAliveToolkit
             var toolStripMenuItem = (ToolStripMenuItem)sender;
             var camera = (ProjectorCameraEnsemble.Camera)toolStripMenuItem.Tag;
             toolStripMenuItem.Checked = !toolStripMenuItem.Checked;
-            cameraDeviceResources[camera].renderEnabled = toolStripMenuItem.Checked;
+
+            // Prevents KeyNotFoundException if camera was not calibrated and therefore CameraDeviceResource was not created
+            CameraDeviceResource cameraDeviceResource;
+            if (cameraDeviceResources.TryGetValue(camera, out cameraDeviceResource))
+            {
+                cameraDeviceResource.renderEnabled = toolStripMenuItem.Checked;
+            }
         }
 
         bool perspectiveView;
@@ -671,7 +781,8 @@ namespace RoomAliveToolkit
             toolStripMenuItem.Checked = true;
 
             var projector = (ProjectorCameraEnsemble.Projector)toolStripMenuItem.Tag;
-            SetViewProjectionFromProjector(projector);
+            projection = GetProjectorProjectionMatrix(projector);
+            projection.Transpose(); 
             manipulator.View = view;
             manipulator.OriginalView = view;
             perspectiveView = false;
@@ -909,6 +1020,35 @@ namespace RoomAliveToolkit
             liveViewToolStripMenuItem.Checked = live;
         }
 
+        bool wireframe = false;
+        private void wireframeViewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            wireframe = !wireframe;
+            wireframeToolStripMenuItem.Checked = wireframe;
+            UpdateRasterizerState();
+        }
+
+        bool renderCameraColorFrustums = false;
+        private void cameraColorFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderCameraColorFrustums = !renderCameraColorFrustums;
+            cameraColorFrustumsToolStripMenuItem.Checked = renderCameraColorFrustums;
+        }
+
+        bool renderCameraDepthFrustums = false;
+        private void cameraDepthFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderCameraDepthFrustums = !renderCameraDepthFrustums;
+            cameraDepthFrustumsToolStripMenuItem.Checked = renderCameraDepthFrustums;
+        }
+
+        bool renderProjectorFrustums = false;
+        private void projectorFrustumToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            renderProjectorFrustums = !renderProjectorFrustums;
+            projectorFrustumsToolStripMenuItem.Checked = renderProjectorFrustums;
+        }
+
         private void videoPanel1_SizeChanged(object sender, EventArgs e)
         {
             // TODO: look into using this as initial creation
@@ -1094,6 +1234,7 @@ namespace RoomAliveToolkit
                 {
                     ensemble = ProjectorCameraEnsemble.FromFile(path);
                     Console.WriteLine("Loaded " + path);
+                    Console.WriteLine("Containing: {0} camera(s), {1} projector(s)", ensemble.cameras.Count, ensemble.projectors.Count);
                 }
                 catch (Exception ex)
                 {
@@ -1194,7 +1335,7 @@ namespace RoomAliveToolkit
 
 
         // could be method on Projector:
-        void SetViewProjectionFromProjector(ProjectorCameraEnsemble.Projector projector)
+        SharpDX.Matrix GetProjectorProjectionMatrix(ProjectorCameraEnsemble.Projector projector)
         {
             if ((projector.pose == null) || (projector.cameraMatrix == null))
                 Console.WriteLine("Projector pose/camera matrix not set. Please perform a calibration.");
@@ -1220,14 +1361,15 @@ namespace RoomAliveToolkit
                 float w = projector.width;
                 float h = projector.height;
 
-                projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
-                projection.Transpose();
+                return GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
             }
+
+            return SharpDX.Matrix.Identity;
         }
 
-        void SetViewProjectionFromCamera(ProjectorCameraEnsemble.Camera camera)
+        SharpDX.Matrix GetCameraColorProjectionMatrix(ProjectorCameraEnsemble.Camera camera)
         {
-            if ((camera.pose == null) || (camera.calibration.colorCameraMatrix == null))
+            if ((camera.pose == null) || (camera.calibration == null))
                 Console.WriteLine("Camera pose not set.");
             else
             {
@@ -1250,9 +1392,41 @@ namespace RoomAliveToolkit
                 float w = Kinect2Calibration.colorImageWidth;
                 float h = Kinect2Calibration.colorImageHeight;
 
-                projection = GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
-                projection.Transpose();
+                return GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
             }
+
+            return SharpDX.Matrix.Identity;
+        }
+
+        SharpDX.Matrix GetCameraDepthProjectionMatrix(ProjectorCameraEnsemble.Camera camera)
+        {
+            if ((camera.pose == null) || (camera.calibration == null))
+                Console.WriteLine("Camera pose not set.");
+            else
+            {
+                view = new SharpDX.Matrix();
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        view[i, j] = (float)camera.pose[i, j];
+                view.Invert();
+                view.Transpose();
+
+                var cameraMatrix = camera.calibration.depthCameraMatrix;
+                float fx = (float)cameraMatrix[0, 0];
+                float fy = (float)cameraMatrix[1, 1];
+                float cx = (float)cameraMatrix[0, 2];
+                float cy = (float)cameraMatrix[1, 2];
+
+                float near = 0.1f;
+                float far = 100.0f;
+
+                float w = Kinect2Calibration.depthImageWidth;
+                float h = Kinect2Calibration.depthImageHeight;
+
+                return GraphicsTransforms.ProjectionMatrixFromCameraMatrix(fx, fy, cx, cy, w, h, near, far);
+            }
+
+            return SharpDX.Matrix.Identity;
         }
 
         void SetDefaultView()

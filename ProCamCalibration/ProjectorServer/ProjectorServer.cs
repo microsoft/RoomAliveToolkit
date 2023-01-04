@@ -33,6 +33,7 @@ namespace RoomAliveToolkit
             {
                 var projectorForm = new ProjectorForm(screenIndex);
                 projectorForm.Show();
+                projectorForm.BringToFront();
                 projectorForms[screenIndex] = projectorForm;
             }
         }
@@ -75,6 +76,7 @@ namespace RoomAliveToolkit
         public void DisplayGrayCode(int screenIndex, int i)
         {
             var projectorForm = projectorForms[screenIndex];
+            projectorForm.BringToFront();
             projectorForm.DisplayGrayCode(i);
         }
 

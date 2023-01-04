@@ -289,7 +289,6 @@ namespace RoomAliveToolkit
             deviceContext.VertexShader.Set(meshVS);
             deviceContext.VertexShader.SetConstantBuffer(0, vertexShaderConstantBuffer);
             deviceContext.GeometryShader.Set(null);
-            deviceContext.PixelShader.Set(meshPS);
             deviceContext.PixelShader.SetSampler(0, colorSamplerState);
             deviceContext.PixelShader.SetConstantBuffer(0, pixelShaderConstantBuffer);
             deviceContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
